@@ -288,21 +288,21 @@ function Generate-Html {
                     $updateDateTime = [DateTime]::ParseExact($updateDate, "yyyy/M/d", $null)
                     $daysSinceUpdate = ($now - $updateDateTime).Days
                     if ($daysSinceUpdate -le $UPDATE_DISPLAY_DAYS) {
-                        $updateBadge = "<span class='update-badge'>📢 $updateDate バージョンアップあり</span>"
+                        $updateBadge = "&lt;span class='update-badge'&gt;📢 $updateDate バージョンアップあり&lt;/span&gt;"
                     }
                 }
                 catch {}
             }
             
             $rows += @"
-            <tr>
-                <td class="os-name">$name</td>
-                <td>
-                    <span class="$versionClass">$version</span>
+            &lt;tr&gt;
+                &lt;td class="os-name"&gt;$name&lt;/td&gt;
+                &lt;td&gt;
+                    &lt;span class="$versionClass"&gt;$version&lt;/span&gt;
                     $updateBadge
-                </td>
-                <td><a href="$url" target="_blank">詳細を見る</a></td>
-            </tr>
+                &lt;/td&gt;
+                &lt;td&gt;&lt;a href="$url" target="_blank"&gt;詳細を見る&lt;/a&gt;&lt;/td&gt;
+            &lt;/tr&gt;
 "@
         }
         
@@ -313,13 +313,13 @@ function Generate-Html {
     $ipadosRowsHtml = Generate-Rows -ResultsList $ipadosResults
     
     $html = @"
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apple iOS/iPadOS バージョン情報</title>
-    <style>
+&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Apple iOS/iPadOS バージョン情報&lt;/title&gt;
+    &lt;style&gt;
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
             max-width: 900px;
@@ -419,50 +419,50 @@ function Generate-Html {
         .table-section {
             margin-bottom: 40px;
         }
-    </style>
-</head>
-<body>
-    <h1>🍎 Apple iOS/iPadOS バージョン情報</h1>
-    <div class="update-time">最終更新: $now</div>
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;🍎 Apple iOS/iPadOS バージョン情報&lt;/h1&gt;
+    &lt;div class="update-time"&gt;最終更新: $now&lt;/div&gt;
     
-    <div class="table-section">
-        <h2>📱 iOS</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>OS</th>
-                    <th>最新バージョン</th>
-                    <th>詳細</th>
-                </tr>
-            </thead>
-            <tbody>
+    &lt;div class="table-section"&gt;
+        &lt;h2&gt;📱 iOS&lt;/h2&gt;
+        &lt;table&gt;
+            &lt;thead&gt;
+                &lt;tr&gt;
+                    &lt;th&gt;OS&lt;/th&gt;
+                    &lt;th&gt;最新バージョン&lt;/th&gt;
+                    &lt;th&gt;詳細&lt;/th&gt;
+                &lt;/tr&gt;
+            &lt;/thead&gt;
+            &lt;tbody&gt;
 $iosRowsHtml
-            </tbody>
-        </table>
-    </div>
+            &lt;/tbody&gt;
+        &lt;/table&gt;
+    &lt;/div&gt;
     
-    <div class="table-section">
-        <h2>📲 iPadOS</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>OS</th>
-                    <th>最新バージョン</th>
-                    <th>詳細</th>
-                </tr>
-            </thead>
-            <tbody>
+    &lt;div class="table-section"&gt;
+        &lt;h2&gt;📲 iPadOS&lt;/h2&gt;
+        &lt;table&gt;
+            &lt;thead&gt;
+                &lt;tr&gt;
+                    &lt;th&gt;OS&lt;/th&gt;
+                    &lt;th&gt;最新バージョン&lt;/th&gt;
+                    &lt;th&gt;詳細&lt;/th&gt;
+                &lt;/tr&gt;
+            &lt;/thead&gt;
+            &lt;tbody&gt;
 $ipadosRowsHtml
-            </tbody>
-        </table>
-    </div>
+            &lt;/tbody&gt;
+        &lt;/table&gt;
+    &lt;/div&gt;
     
-    <div class="footer">
-        ※バージョンアップ通知は更新から${UPDATE_DISPLAY_DAYS}日間表示されます<br>
+    &lt;div class="footer"&gt;
+        ※バージョンアップ通知は更新から${UPDATE_DISPLAY_DAYS}日間表示されます&lt;br&gt;
         データファイル: $DATA_FILE
-    </div>
-</body>
-</html>
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
 "@
     
     return $html
