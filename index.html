@@ -31,10 +31,457 @@
         <p>Created a note site with GitHub Pages.</p>
     </div>
     
-    <div class="note">
-        <div class="date">2026-02-15</div>
-        <h2>How to Use</h2>
-        <p>You can add notes by editing this index.html file.</p>
+<div class="note">
+    <div class="date">2026-02-16</div>
+    <h2>PowerShell Script</h2>
+    <pre><code># Apple iOS/iPadOS バージョン情報取得スクリプト (PowerShell版)
+# 最終更新: 2026-02-15
+
+#Requires -Version 5.1
+
+# 設定
+$OUTPUT_DIR = "C:\AppleVersions"
+$HTML_FILE = Join-Path $OUTPUT_DIR "ios-versions.html"
+$DATA_FILE = Join-Path $OUTPUT_DIR "version-data.json"
+$UPDATE_DISPLAY_DAYS = 14
+
+# 対象URL（古い順）
+$TARGETS = @(
+    @{Name = "iOS 16"; Url = "https://support.apple.com/ja-jp/101566"},
+    @{Name = "iOS 17"; Url = "https://support.apple.com/ja-jp/118723"},
+    @{Name = "iOS 18"; Url = "https://support.apple.com/ja-jp/121161"},
+    @{Name = "iOS 26"; Url = "https://support.apple.com/ja-jp/123075"},
+    @{Name = "iPadOS 16"; Url = "https://support.apple.com/ja-jp/108050"},
+    @{Name = "iPadOS 17"; Url = "https://support.apple.com/ja-jp/118702"},
+    @{Name = "iPadOS 18"; Url = "https://support.apple.com/ja-jp/121162"},
+    @{Name = "iPadOS 26"; Url = "https://support.apple.com/ja-jp/123074"}
+)
+
+# 出力ディレクトリ作成
+if (-not (Test-Path $OUTPUT_DIR)) {
+    New-Item -ItemType Directory -Path $OUTPUT_DIR -Force | Out-Null
+}
+
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host "Apple iOS/iPadOS バージョン情報取得" -ForegroundColor Cyan
+Write-Host "============================================================" -ForegroundColor Cyan
+
+# 既存データの読み込み
+$versionData = @{}
+if (Test-Path $DATA_FILE) {
+    try {
+        $jsonContent = Get-Content $DATA_FILE -Raw -Encoding UTF8
+        $versionData = $jsonContent | ConvertFrom-Json
+        # ハッシュテーブルに変換
+        $tempData = @{}
+        $versionData.PSObject.Properties | ForEach-Object {
+            $tempData[$_.Name] = @{
+                Version = $_.Value.Version
+                UpdateDate = $_.Value.UpdateDate
+                PreviousVersion = $_.Value.PreviousVersion
+            }
+        }
+        $versionData = $tempData
+    }
+    catch {
+        Write-Host "⚠ データファイルの読み込みに失敗しました" -ForegroundColor Yellow
+        $versionData = @{}
+    }
+}
+
+function Extract-Version {
+    param(
+        [string]$Content,
+        [string]$OsName
+    )
+    
+    # OS名からメジャーバージョン番号を除去
+    # 例: "iOS 17" → "iOS"
+    $baseOsName = $OsName -replace '\s+\d+$', ''
+    
+    # 期待されるメジャーバージョン
+    # 例: "iOS 17" → "17"
+    $expectedMajor = $null
+    if ($OsName -match '\s+(\d+)$') {
+        $expectedMajor = $matches[1]
+    }
+    
+    # パターン1: <a>タグからバージョンを抽出
+    $linkPattern = "<a[^>]*>\s*$([regex]::Escape($baseOsName))\s+([\d\.]+)\s*</a>"
+    $linkMatches = [regex]::Matches($Content, $linkPattern, 'IgnoreCase')
+    $linkVersions = @()
+    foreach ($match in $linkMatches) {
+        $linkVersions += $match.Groups[1].Value
+    }
+    
+    # パターン2: <h2>タグからバージョンを抽出
+    $h2Pattern = "<h2[^>]*>\s*$([regex]::Escape($baseOsName))\s+([\d\.]+)\s*</h2>"
+    $h2Matches = [regex]::Matches($Content, $h2Pattern, 'IgnoreCase')
+    $h2Versions = @()
+    foreach ($match in $h2Matches) {
+        $h2Versions += $match.Groups[1].Value
+    }
+    
+    # 両方のマッチを結合（重複削除）
+    $allVersions = ($linkVersions + $h2Versions) | Select-Object -Unique
+    
+    if ($allVersions.Count -eq 0) {
+        return $null
+    }
+    
+    # メジャーバージョンでフィルタ
+    if ($expectedMajor) {
+        $filteredVersions = $allVersions | Where-Object { $_ -match "^$expectedMajor\." }
+        
+        if ($filteredVersions.Count -eq 0) {
+            return $null
+        }
+        
+        # バージョンをソートして最新を取得
+        $sortedVersions = $filteredVersions | Sort-Object {
+            [version]($_ -replace '^(\d+\.\d+(?:\.\d+)?).*', '$1')
+        }
+        
+        return $sortedVersions[-1]
+    }
+    
+    return $allVersions[0]
+}
+
+function Fetch-Version {
+    param($Target)
+    
+    $name = $Target.Name
+    $url = $Target.Url
+    
+    Write-Host "取得中: $name - $url"
+    
+    try {
+        # ブラウザのUser-Agentを設定
+        $headers = @{
+            'User-Agent' = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            'Accept' = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+            'Accept-Language' = 'ja,en-US;q=0.7,en;q=0.3'
+        }
+        
+        $response = Invoke-WebRequest -Uri $url -Headers $headers -TimeoutSec 30 -UseBasicParsing
+        $content = $response.Content
+        
+        $version = Extract-Version -Content $content -OsName $name
+        
+        if (-not $version) {
+            Write-Host "⚠ $name : バージョン情報が見つかりませんでした" -ForegroundColor Yellow
+            $version = "取得失敗"
+        }
+        
+        return @{
+            Name = $name
+            Version = $version
+            Url = $url
+            Success = ($version -ne "取得失敗")
+        }
+    }
+    catch {
+        Write-Host "⚠ $name の取得エラー: $($_.Exception.Message)" -ForegroundColor Yellow
+        return @{
+            Name = $name
+            Version = "取得エラー"
+            Url = $url
+            Success = $false
+        }
+    }
+}
+
+# 各URLからバージョン情報を取得
+$results = @()
+foreach ($target in $TARGETS) {
+    $result = Fetch-Version -Target $target
+    $results += $result
+}
+
+# バージョンデータの更新
+$now = Get-Date
+foreach ($result in $results) {
+    if (-not $result.Success) {
+        continue
+    }
+    
+    $name = $result.Name
+    $version = $result.Version
+    
+    # 既存データと比較
+    $isUpdated = $false
+    $updateDate = ""
+    $previousVersion = ""
+    
+    if ($versionData.ContainsKey($name)) {
+        $oldVersion = $versionData[$name].Version
+        if ($version -ne $oldVersion) {
+            $isUpdated = $true
+            $updateDate = $now.ToString("yyyy/M/d")
+            $previousVersion = $oldVersion
+            
+            # データ更新
+            $versionData[$name] = @{
+                Version = $version
+                UpdateDate = $updateDate
+                PreviousVersion = $previousVersion
+            }
+        }
+        else {
+            # 既存の更新日を保持
+            $updateDate = $versionData[$name].UpdateDate
+            $previousVersion = $versionData[$name].PreviousVersion
+        }
+    }
+    else {
+        # 新規追加
+        $updateDate = $now.ToString("yyyy/M/d")
+        $versionData[$name] = @{
+            Version = $version
+            UpdateDate = $updateDate
+            PreviousVersion = ""
+        }
+        $isUpdated = $true
+    }
+    
+    # 結果に更新情報を追加
+    $result.IsUpdated = $isUpdated
+    $result.UpdateDate = $updateDate
+}
+
+# JSONデータ保存
+try {
+    $versionData | ConvertTo-Json -Depth 10 | Out-File $DATA_FILE -Encoding UTF8
+}
+catch {
+    Write-Host "⚠ データファイルの保存に失敗しました" -ForegroundColor Yellow
+}
+
+# HTML生成
+function Generate-Html {
+    param($Results)
+    
+    $now = Get-Date -Format "yyyy/M/d HH:mm:ss"
+    
+    # iOSとiPadOSに分類
+    $iosResults = $Results | Where-Object { $_.Name -like "iOS *" }
+    $ipadosResults = $Results | Where-Object { $_.Name -like "iPadOS *" }
+    
+    function Generate-Rows {
+        param($ResultsList)
+        
+        $rows = @()
+        foreach ($result in $ResultsList) {
+            $name = $result.Name
+            $version = $result.Version
+            $url = $result.Url
+            $isUpdated = $result.IsUpdated
+            $updateDate = $result.UpdateDate
+            
+            $versionClass = if ($result.Success) { "version" } else { "error" }
+            $updateBadge = ""
+            
+            # 更新バッジ表示判定（14日以内）
+            if ($isUpdated -and $updateDate) {
+                try {
+                    $updateDateTime = [DateTime]::ParseExact($updateDate, "yyyy/M/d", $null)
+                    $daysSinceUpdate = ($now - $updateDateTime).Days
+                    if ($daysSinceUpdate -le $UPDATE_DISPLAY_DAYS) {
+                        $updateBadge = "<span class='update-badge'>📢 $updateDate バージョンアップあり</span>"
+                    }
+                }
+                catch {}
+            }
+            
+            $rows += @"
+            <tr>
+                <td class="os-name">$name</td>
+                <td>
+                    <span class="$versionClass">$version</span>
+                    $updateBadge
+                </td>
+                <td><a href="$url" target="_blank">詳細を見る</a></td>
+            </tr>
+"@
+        }
+        
+        return $rows -join "`n"
+    }
+    
+    $iosRowsHtml = Generate-Rows -ResultsList $iosResults
+    $ipadosRowsHtml = Generate-Rows -ResultsList $ipadosResults
+    
+    $html = @"
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple iOS/iPadOS バージョン情報</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f7;
+        }
+        h1 {
+            color: #1d1d1f;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .update-time {
+            text-align: center;
+            color: #6e6e73;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th {
+            background-color: #007aff;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e5e5e7;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        .version {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1d1d1f;
+        }
+        .update-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff3b30 0%, #ff6b6b 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .os-name {
+            font-weight: 500;
+            color: #424245;
+        }
+        .error {
+            color: #ff3b30;
+            font-style: italic;
+        }
+        a {
+            color: #007aff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #6e6e73;
+            font-size: 12px;
+        }
+        h2 {
+            color: #1d1d1f;
+            font-size: 20px;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid #007aff;
+        }
+        h2:first-of-type {
+            margin-top: 0;
+        }
+        .table-section {
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍎 Apple iOS/iPadOS バージョン情報</h1>
+    <div class="update-time">最終更新: $now</div>
+    
+    <div class="table-section">
+        <h2>📱 iOS</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>OS</th>
+                    <th>最新バージョン</th>
+                    <th>詳細</th>
+                </tr>
+            </thead>
+            <tbody>
+$iosRowsHtml
+            </tbody>
+        </table>
     </div>
+    
+    <div class="table-section">
+        <h2>📲 iPadOS</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>OS</th>
+                    <th>最新バージョン</th>
+                    <th>詳細</th>
+                </tr>
+            </thead>
+            <tbody>
+$ipadosRowsHtml
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="footer">
+        ※バージョンアップ通知は更新から${UPDATE_DISPLAY_DAYS}日間表示されます<br>
+        データファイル: $DATA_FILE
+    </div>
+</body>
+</html>
+"@
+    
+    return $html
+}
+
+# HTML生成と保存
+$html = Generate-Html -Results $results
+try {
+    $html | Out-File $HTML_FILE -Encoding UTF8
+    Write-Host ""
+    Write-Host "============================================================" -ForegroundColor Green
+    Write-Host "✅ 完了: $HTML_FILE" -ForegroundColor Green
+    Write-Host "データファイル: $DATA_FILE" -ForegroundColor Green
+    Write-Host "============================================================" -ForegroundColor Green
+}
+catch {
+    Write-Host "⚠ HTMLファイルの保存に失敗しました: $($_.Exception.Message)" -ForegroundColor Red
+}</code></pre>
+</div>
+    
 </body>
 </html>
