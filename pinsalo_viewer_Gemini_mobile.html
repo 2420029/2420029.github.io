@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>日ピン研 Mobile Viewer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --bg:       #0d0f14;
+    --surface:  #151820;
+    --border:   #252a35;
+    --accent:   #e8a838;
+    --accent2:  #d64040;
+    --text:     #c8ccda;
+    --muted:    #555e72;
+    --link:     #7ab3e0;
+    --header-h: 50px;
+    --bottom-h: 56px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text);
+               font-family: 'Noto Sans JP', sans-serif; font-size: 15px; overflow: hidden; }
+
+  /* ── Layout ── */
+  #app { display: flex; flex-direction: column; height: 100vh; position: relative; }
+
+  /* ── Header ── */
+  header {
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    z-index: 100;
+  }
+  .menu-btn {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: var(--accent); cursor: pointer;
+  }
+  .header-title { flex: 1; text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 14px; font-weight: bold; color: var(--accent); }
+  
+  /* ── Search Bar (Header Bottom) ── */
+  .search-container {
+    padding: 8px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  #search-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    outline: none;
+  }
+
+  /* ── Sidebar (Drawer) ── */
+  #sidebar {
+    position: absolute;
+    top: 0; left: -280px;
+    width: 280px; height: 100%;
+    background: var(--surface);
+    z-index: 200;
+    transition: left .3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+  }
+  #sidebar.open { left: 0; }
+  #sidebar-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 150;
+    display: none;
+  }
+  #sidebar-overlay.open { display: block; }
+  
+  #sidebar-header {
+    padding: 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  #nav { flex: 1; overflow-y: auto; padding: 10px 0; }
+  
+  /* ── Content ── */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  #content-area {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 20px;
+  }
+  #rendered { padding: 16px; line-height: 1.6; }
+  #rendered img { max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; }
+  #rendered table { width: 100% !important; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  #rendered td, #rendered th { border: 1px solid var(--border); padding: 8px; }
+
+  /* ── Bottom Navigation ── */
+  #bottom-nav {
+    height: var(--bottom-h);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 10px; cursor: pointer;
+  }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn i { font-size: 18px; margin-bottom: 2px; }
+
+  /* ── Components from Original ── */
+  .nav-group-label { font-size: 11px; font-weight: 700; color: var(--muted); padding: 12px 16px 6px; text-transform: uppercase; }
+  .nav-item { padding: 12px 20px; font-size: 14px; border-left: 4px solid transparent; }
+  .nav-item.active { background: rgba(232,168,56,.1); border-left-color: var(--accent); color: var(--accent); }
+  
+  .filter-section { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .filter-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .filter-chip, .region-chip {
+    padding: 6px 12px; border-radius: 16px; border: 1px solid var(--border); font-size: 12px;
+  }
+  .filter-chip.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .region-chip.active { background: var(--link); color: #fff; border-color: var(--link); }
+
+  /* Status and Error */
+  #status { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--muted); }
+  .spinner { width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Helper */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Overlay -->
+  <div id="sidebar-overlay"></div>
+
+  <!-- Drawer Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <div style="font-family:'Share Tech Mono'; color:var(--accent)">MENU</div>
+      <div class="menu-btn" id="close-sidebar">✕</div>
+    </div>
+    <div id="nav">
+      <div class="nav-group">
+        <div class="nav-group-label">主要コンテンツ</div>
+        <div class="nav-item" data-url="https://pinsalo.info/sp/pink.htm">🏠 トップページ</div>
+        <div class="nav-item" data-url="https://pinsalo.info/sp/historyall.htm">📋 更新履歴一覧</div>
+      </div>
+
+      <div class="filter-section">
+        <div class="nav-group-label" style="padding:0 0 8px 0">業種</div>
+        <div class="filter-chips">
+          <div class="filter-chip active" data-btype="">全て</div>
+          <div class="filter-chip" data-btype="pin" data-text="ピンサロ,ピンクサロン">ピンサロ</div>
+          <div class="filter-chip" data-btype="soap" data-text="ソープ,ソープランド">ソープ</div>
+          <div class="filter-chip" data-btype="deli" data-text="デリヘル">デリヘル</div>
+          <div class="filter-chip" data-btype="hlth" data-text="ヘルス,箱ヘル">ヘルス</div>
+        </div>
+      </div>
+
+      <div id="region-filter-container">
+        <!-- JSで生成 -->
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">アーカイブ</div>
+        <div class="nav-item" data-url="https://pinsalo.info/sp/historyr.htm">令和8年</div>
+        <div class="nav-item" data-url="https://pinsalo.info/sp/historyq.htm">令和7年</div>
+        <div class="nav-item" data-url="https://pinsalo.info/sp/historyp.htm">令和6年</div>
+        <div class="nav-item" data-url="https://pinsalo.info/sp/historyo.htm">令和5年</div>
+        <div class="nav-item" data-url="https://pinsalo.info/sp/historyn.htm">令和4年</div>
+        <div class="nav-item" data-url="https://pinsalo.info/sp/historym.htm">令和3年</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main UI -->
+  <header>
+    <div class="menu-btn" id="open-sidebar">☰</div>
+    <div class="header-title">PIN研究会 VIEWER</div>
+    <div class="menu-btn" id="btn-reload-head">↺</div>
+  </header>
+
+  <div class="search-container">
+    <input type="text" id="search-input" placeholder="店名・地名で検索...">
+  </div>
+
+  <div id="main">
+    <div id="content-area">
+      <div id="status">
+        <div class="spinner hidden" id="loading-spinner"></div>
+        <div id="status-msg">メニューからページを選択してください</div>
+      </div>
+      <div id="rendered"></div>
+      <div id="error-box" class="hidden" style="padding:20px; color:var(--accent2);">
+        <h3>⚠ エラー</h3>
+        <p id="error-msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav id="bottom-nav">
+    <div class="nav-btn" id="btn-back">
+      <i>⬅</i>
+      <span>戻る</span>
+    </div>
+    <div class="nav-btn" id="btn-home">
+      <i>🏠</i>
+      <span>トップ</span>
+    </div>
+    <div class="nav-btn" id="btn-external">
+      <i>↗</i>
+      <span>元サイト</span>
+    </div>
+    <div class="nav-btn" style="position:relative">
+      <span id="result-count" style="font-family:'Share Tech Mono'; color:var(--accent); font-size:12px;">-</span>
+      <span>件数</span>
+    </div>
+  </nav>
+</div>
+
+<script>
+// ── 基本設定 & 状態 ──
+let currentUrl = null;
+const navHistory = [];
+const PROXIES = [
+  { name: 'allorigins',  url: 'https://api.allorigins.win/raw?disableCache=true&url=', encode: true  },
+  { name: 'corsproxy.io',url: 'https://corsproxy.io/?',                                encode: true  },
+  { name: 'codetabs',    url: 'https://api.codetabs.com/v1/proxy?quest=',              encode: true  }
+];
+
+let activeFilter = { btype: '', texts: [], pref: '', keyword: '' };
+
+const PREF_MAP = {
+  '札幌':'北海道','すすきの':'北海道','仙台':'宮城','吉原':'東京','新宿':'東京','渋谷':'東京','池袋':'東京','上野':'東京','横浜':'神奈川','川崎':'神奈川','西川口':'埼玉','大宮':'埼玉','千葉':'千葉','船橋':'千葉','名古屋':'愛知','栄':'愛知','岐阜':'岐阜','難波':'大阪','梅田':'大阪','飛田':'大阪','福原':'兵庫','神戸':'兵庫','京都':'京都','広島':'広島','中洲':'福岡','博多':'福岡','那覇':'沖縄'
+};
+
+// ── DOM要素 ──
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebar-overlay');
+const renderedEl = document.getElementById('rendered');
+const statusMsg = document.getElementById('status-msg');
+const spinner = document.getElementById('loading-spinner');
+const searchInput = document.getElementById('search-input');
+const resultCountEl = document.getElementById('result-count');
+
+// ── サイドバー制御 ──
+const toggleSidebar = (state) => {
+  sidebar.classList.toggle('open', state);
+  overlay.classList.toggle('open', state);
+};
+document.getElementById('open-sidebar').onclick = () => toggleSidebar(true);
+document.getElementById('close-sidebar').onclick = () => toggleSidebar(false);
+overlay.onclick = () => toggleSidebar(false);
+
+// ── 地域フィルター生成 ──
+function initRegionFilter() {
+  const container = document.getElementById('region-filter-container');
+  const prefs = ['東京', '神奈川', '埼玉', '千葉', '大阪', '兵庫', '愛知', '福岡', '北海道'];
+  let html = `<div class="filter-section"><div class="nav-group-label" style="padding:0 0 8px 0">主要地域</div><div class="filter-chips">`;
+  html += `<div class="region-chip active" data-pref="">全国</div>`;
+  prefs.forEach(p => html += `<div class="region-chip" data-pref="${p}">${p}</div>`);
+  html += `</div></div>`;
+  container.innerHTML = html;
+
+  container.querySelectorAll('.region-chip').forEach(chip => {
+    chip.onclick = () => {
+      container.querySelectorAll('.region-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter.pref = chip.dataset.pref;
+      applyFilter();
+      toggleSidebar(false);
+    };
+  });
+}
+
+// ── ページ読み込み ──
+async function loadPage(url, push = true) {
+  if (push && currentUrl && currentUrl !== url) navHistory.push(currentUrl);
+  currentUrl = url;
+  
+  // UI Reset
+  renderedEl.style.display = 'none';
+  spinner.classList.remove('hidden');
+  statusMsg.textContent = "読込中...";
+  toggleSidebar(false);
+
+  try {
+    const html = await fetchWithProxy(url);
+    renderContent(html, url);
+  } catch (e) {
+    statusMsg.textContent = "読み込み失敗";
+    spinner.classList.add('hidden');
+    alert("エラー: " + e.message);
+  }
+}
+
+async function fetchWithProxy(url) {
+  for (const proxy of PROXIES) {
+    try {
+      const target = proxy.url + (proxy.encode ? encodeURIComponent(url) : url);
+      const res = await fetch(target);
+      if (!res.ok) continue;
+      const buf = await res.arrayBuffer();
+      return new TextDecoder('shift-jis').decode(buf); // サイトがS-JISメインのため
+    } catch (e) { console.error(e); }
+  }
+  throw new Error("全プロキシが失敗しました");
+}
+
+function renderContent(html, baseUrl) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const base = new URL(baseUrl);
+
+  // リンク調整
+  doc.querySelectorAll('a').forEach(a => {
+    try {
+      const href = new URL(a.getAttribute('href'), base).href;
+      if (href.includes('pinsalo.info')) {
+        a.onclick = (e) => { e.preventDefault(); loadPage(href); };
+      } else {
+        a.target = "_blank";
+      }
+    } catch(e){}
+  });
+
+  // 不要要素削除
+  doc.querySelectorAll('script, iframe, ads').forEach(el => el.remove());
+
+  renderedEl.innerHTML = doc.body.innerHTML;
+  renderedEl.style.display = 'block';
+  spinner.classList.add('hidden');
+  statusMsg.textContent = "";
+  
+  document.getElementById('content-area').scrollTop = 0;
+  applyFilter();
+}
+
+// ── フィルター ──
+function applyFilter() {
+  const entries = Array.from(renderedEl.querySelectorAll('div.box1, div.box2, tr'));
+  if (entries.length === 0) return;
+
+  let count = 0;
+  const kw = searchInput.value.toLowerCase();
+
+  entries.forEach(el => {
+    const text = el.textContent.toLowerCase();
+    
+    // 業種
+    let bHit = !activeFilter.btype || activeFilter.texts.some(t => text.includes(t));
+    // 地域
+    let pHit = !activeFilter.pref || text.includes(activeFilter.pref) || (PREF_MAP[activeFilter.pref] === activeFilter.pref);
+    // キーワード
+    let kHit = !kw || text.includes(kw);
+
+    const isVisible = bHit && pHit && kHit;
+    el.style.display = isVisible ? '' : 'none';
+    if (isVisible) count++;
+  });
+
+  resultCountEl.textContent = count;
+}
+
+// ── イベント設定 ──
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.onclick = () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    loadPage(item.dataset.url);
+  };
+});
+
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.onclick = () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeFilter.btype = chip.dataset.btype;
+    activeFilter.texts = (chip.dataset.text || "").split(',');
+    applyFilter();
+    toggleSidebar(false);
+  };
+});
+
+searchInput.oninput = () => applyFilter();
+document.getElementById('btn-reload-head').onclick = () => { if(currentUrl) loadPage(currentUrl, false); };
+document.getElementById('btn-home').onclick = () => loadPage('https://pinsalo.info/sp/pink.htm');
+document.getElementById('btn-external').onclick = () => { if(currentUrl) window.open(currentUrl, '_blank'); };
+document.getElementById('btn-back').onclick = () => {
+  if (navHistory.length > 0) loadPage(navHistory.pop(), false);
+};
+
+// 初期化
+initRegionFilter();
+</script>
+</body>
+</html>
