@@ -700,24 +700,35 @@ function render(html, baseUrl) {
   extractShopTimeline(baseUrl);
 }
 
-// ── 店舗タイムライン（historyall.htm × 店名テキスト検索）────────────────
-// 現在のレポートから「店名　XXX」を抽出し、historyall.htm 全リンクを
-// 店名で絞り込んで同店舗の全レポートを表示する（新旧双方向に対応）
+// ── 店舗タイムライン（案1: 店名テキスト ＋ 案2: URLディレクトリ）──────────
 async function extractShopTimeline(currentUrl) {
   const tlEl    = document.getElementById('shop-timeline');
   const linksEl = document.getElementById('shop-tl-links');
   const countEl = document.getElementById('shop-tl-count');
+  const titleEl = document.querySelector('.shop-tl-title');
 
-  // 個別レポートでなければ非表示
+  // 個別レポートページ以外は非表示
   if (!/\/rpt\d*\//i.test(currentUrl)) { tlEl.style.display = 'none'; return; }
 
-  // レンダリング済み本文から「店名　XXX」を抽出
+  // 案1: 店名抽出（複数パターン対応）
   const bodyText = renderedEl.textContent;
-  const m = bodyText.match(/店名[\s\u3000]+([^\n\r]+)/);
-  if (!m) { tlEl.style.display = 'none'; return; }
-  const shopName = m[1].trim();
-  // 短すぎる店名は誤マッチの恐れがあるためスキップ
-  if (shopName.length < 2) { tlEl.style.display = 'none'; return; }
+  const shopPatterns = [
+    /店名[\s\u3000:：]+([^\n\r]+)/,
+    /店舗名[\s\u3000:：]+([^\n\r]+)/,
+    /SHOP[\s\u3000:：]+([^\n\r]+)/i,
+  ];
+  let shopName = null;
+  for (const pat of shopPatterns) {
+    const m = bodyText.match(pat);
+    if (m && m[1].trim().length >= 2) { shopName = m[1].trim(); break; }
+  }
+
+  // 案2: URLディレクトリ抽出（例: /rpt18/）
+  const dirMatch = new URL(currentUrl).pathname.match(/(\/rpt\d+\/)/i);
+  const urlDir = dirMatch ? dirMatch[1] : null;
+
+  // 両方なければ非表示
+  if (!shopName && !urlDir) { tlEl.style.display = 'none'; return; }
 
   tlEl.style.display = 'block';
   linksEl.innerHTML = '';
@@ -726,17 +737,34 @@ async function extractShopTimeline(currentUrl) {
   try {
     const masterHtml = await fetchFast('https://pinsalo.info/sp/historyall.htm');
     const doc = new DOMParser().parseFromString(masterHtml, 'text/html');
+    const allLinks = Array.from(doc.querySelectorAll('a[href]')).map(a => ({
+      text: a.textContent.trim(),
+      href: new URL(a.getAttribute('href'), 'https://pinsalo.info/sp/').href,
+    }));
 
-    const links = Array.from(doc.querySelectorAll('a[href]'))
-      .filter(a => a.textContent.includes(shopName))
-      .map(a => ({
-        text: a.textContent.trim(),
-        href: new URL(a.getAttribute('href'), 'https://pinsalo.info/sp/').href,
-      }));
+    const matched = new Map();
 
-    const unique = Array.from(new Map(links.map(l => [l.href, l])).values());
+    // 案1: 店名マッチ（優先挿入）
+    if (shopName) {
+      allLinks
+        .filter(l => l.text.includes(shopName))
+        .forEach(l => matched.set(l.href, l));
+    }
 
+    // 案2: URLディレクトリマッチ（案1で拾えなかったものを補完）
+    if (urlDir) {
+      allLinks
+        .filter(l => l.href.includes(urlDir))
+        .forEach(l => { if (!matched.has(l.href)) matched.set(l.href, l); });
+    }
+
+    const unique = Array.from(matched.values());
     if (unique.length === 0) { tlEl.style.display = 'none'; return; }
+
+    // タイトルを動的に更新
+    if (titleEl) titleEl.textContent = shopName
+      ? `🏪 「${shopName}」のレポート`
+      : '🏪 この店舗の他のレポート';
 
     unique.forEach(link => {
       const div = document.createElement('div');
