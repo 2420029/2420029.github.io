@@ -286,6 +286,8 @@ const historyStack = [];
 const cache = new Map();
 const scrollMap = new Map();
 let activeFilter = { btype: '', texts: [], pref: '', keyword: '' };
+let histYearUrls  = [];   // historyall.htm の各年ページURL
+let histIndexCache = null; // 全年ページのレポートリンク一覧（{ href, text }[]）
 
 // ── キャッシュLRU（50件上限）────────────────────────────────────────────────
 const MAX_CACHE = 50;
@@ -401,14 +403,25 @@ function highlightInElement(el, keyword) {
 function applyFilter() {
   activeFilter.keyword = document.getElementById('q-input').value.trim().toLowerCase();
 
-  // historyall.htm: フィルターあり→検索インデックス表示、なし→元コンテンツ表示
+  // historyall.htm: フィルターあり→串刺し検索、なし→元コンテンツ表示
   const histMain    = document.getElementById('hist-main');
   const histResults = document.getElementById('hist-results');
   if (histMain && histResults) {
     const hasFilter = !!(activeFilter.keyword || activeFilter.btype || activeFilter.pref);
     histMain.style.display    = hasFilter ? 'none' : '';
     histResults.style.display = hasFilter ? ''     : 'none';
-    if (!hasFilter) { resCount.textContent = '-'; updateFilterSummary(); return; }
+    if (!hasFilter) {
+      resCount.textContent = '-';
+      updateFilterSummary();
+      return;
+    }
+    // キーワードがある場合は全年ページ串刺し検索を実行
+    if (activeFilter.keyword) {
+      searchHistoryAll(activeFilter.keyword);
+      return;
+    }
+    // キーワードなし（業態・地域のみ）は通常フィルターへフォールスルー
+    // hist-results 内の box1 を対象にする
   }
 
   const entries = Array.from(document.querySelectorAll('#rendered div.box1, #rendered div.box2'));
@@ -718,42 +731,127 @@ function render(html, baseUrl) {
   extractShopTimeline(baseUrl);
 }
 
-// ── historyall.htm 検索インデックス構築 ───────────────────────────────────
-// 元コンテンツを #hist-main に退避し、レポートリンクを box1 化した
-// #hist-results を並列構築。フィルター操作で両者を切り替える。
+// ── historyall.htm 検索インデックス構築（同期・軽量版）────────────────────
+// historyall.htm は年ナビゲーションページ（historyr.htm, historyq.htm…）のみ。
+// ここでは元コンテンツを #hist-main に退避し、空の #hist-results を用意するだけ。
+// 実際の串刺し検索は searchHistoryAll()（非同期）が担う。
 function buildHistorySearchable() {
-  const REPORT_RE = /\/rpt\d*\//i;
-
   // 既存コンテンツを #hist-main に移動
   const main = document.createElement('div');
   main.id = 'hist-main';
   Array.from(renderedEl.childNodes).forEach(n => main.appendChild(n));
   renderedEl.appendChild(main);
 
-  // レポートリンクを抽出して box1 化
-  const seen = new Set();
+  // 年ページURL を収集（history*.htm、historyall.htm 自身は除外）
+  // ※ replaceImgButtons() が全リンクに data-nav-btn を付けるため、属性チェックは不要
+  histYearUrls = Array.from(main.querySelectorAll('a[href]'))
+    .filter(a => /history[a-z0-9]+\.htm/i.test(a.href)
+                 && !/historyall\.htm/i.test(a.href))
+    .map(a => a.href);
+
+  // 空の検索結果コンテナを用意
   const results = document.createElement('div');
   results.id = 'hist-results';
   results.style.display = 'none';
+  renderedEl.appendChild(results);
 
-  Array.from(main.querySelectorAll('a[href]'))
-    .filter(a => {
-      const href = a.getAttribute('href') || '';
-      return REPORT_RE.test(href) && a.textContent.trim().length > 5;
-    })
-    .forEach(a => {
-      if (seen.has(a.href)) return;
-      seen.add(a.href);
-      const box = document.createElement('div');
-      box.className = 'box1';
-      const link = document.createElement('a');
-      link.href = a.href;
-      link.textContent = a.textContent.trim();
-      box.appendChild(link);
-      results.appendChild(box);
-    });
+  // ページ遷移ごとにキャッシュリセット
+  histIndexCache = null;
+}
 
-  if (results.children.length > 0) renderedEl.appendChild(results);
+// ── historyall.htm 全年ページ串刺し検索（非同期）────────────────────────
+async function searchHistoryAll(keyword) {
+  const results = document.getElementById('hist-results');
+  if (!results) return;
+
+  // ローディング表示
+  results.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">検索中…</div>';
+  results.style.display = '';
+
+  try {
+    // インデックス未構築ならフェッチ
+    if (!histIndexCache) {
+      const yearPages = histYearUrls.length > 0 ? histYearUrls : [];
+      if (yearPages.length === 0) {
+        results.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">年ページが見つかりません</div>';
+        return;
+      }
+
+      // 全年ページを並列フェッチ
+      const htmlTexts = await Promise.allSettled(yearPages.map(url => fetchFast(url)));
+
+      const entries = [];
+      const seen = new Set();
+
+      htmlTexts.forEach((res, i) => {
+        if (res.status !== 'fulfilled') return;
+        const yearUrl = yearPages[i];
+        // ベースURL（同ディレクトリ）
+        const base = yearUrl.replace(/[^/]+$/, '');
+
+        const tmp = document.createElement('div');
+        tmp.innerHTML = res.value;
+
+        Array.from(tmp.querySelectorAll('a[href]')).forEach(a => {
+          const raw = a.getAttribute('href') || '';
+          if (!raw || /^#|^javascript/i.test(raw)) return;
+
+          // 絶対URLに変換
+          let absUrl;
+          try {
+            absUrl = new URL(raw, yearUrl).href;
+          } catch { return; }
+
+          // 年ナビページ自体は除外
+          if (/history[a-z0-9]*\.htm/i.test(absUrl)) return;
+          // .htm リンクのみ
+          if (!/\.html?($|\?)/i.test(absUrl)) return;
+
+          const text = a.textContent.trim();
+          if (text.length < 6) return;          // 短すぎる除外
+          if (seen.has(absUrl)) return;
+          seen.add(absUrl);
+
+          entries.push({ href: absUrl, text });
+        });
+      });
+
+      histIndexCache = entries;
+    }
+
+    // キーワードフィルタ
+    const kw = keyword.toLowerCase();
+    const filtered = kw
+      ? histIndexCache.filter(e => e.text.toLowerCase().includes(kw))
+      : histIndexCache;
+
+    // 結果描画
+    if (filtered.length === 0) {
+      results.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">「${keyword}」に一致するレポートは見つかりませんでした</div>`;
+    } else {
+      results.innerHTML = '';
+      filtered.forEach(e => {
+        const box = document.createElement('div');
+        box.className = 'box1';
+        const link = document.createElement('a');
+        link.href = e.href;
+        link.textContent = e.text;
+        box.appendChild(link);
+        results.appendChild(box);
+      });
+      resCount.textContent = filtered.length;
+      updateFilterSummary();
+      // キーワードハイライト
+      if (kw.length >= 2) {
+        Array.from(results.querySelectorAll('.box1')).forEach(el => {
+          el.dataset.origHtml = el.innerHTML;
+          highlightInElement(el, kw);
+        });
+      }
+    }
+  } catch (err) {
+    results.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">取得エラー: ${err.message}</div>`;
+  }
 }
 
 // ── 店舗タイムライン（案1: 店名テキスト ＋ 案2: URLディレクトリ）──────────
