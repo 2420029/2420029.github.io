@@ -278,7 +278,15 @@ const PREF_MAP = {
 let currentUrl = '';
 const historyStack = [];
 const cache = new Map();
+const scrollMap = new Map();
 let activeFilter = { btype: '', texts: [], pref: '', keyword: '' };
+
+// ── キャッシュLRU（50件上限）────────────────────────────────────────────────
+const MAX_CACHE = 50;
+function cacheSet(key, value) {
+  if (cache.size >= MAX_CACHE) cache.delete(cache.keys().next().value);
+  cache.set(key, value);
+}
 
 // ── DOM参照 ───────────────────────────────────────────────────────────────
 const sidebar        = document.getElementById('sidebar');
@@ -288,6 +296,7 @@ const statusSpinner  = document.getElementById('status-spinner');
 const statusMsg      = document.getElementById('status-msg');
 const statusRetry    = document.getElementById('status-retry');
 const renderedEl     = document.getElementById('rendered');
+const contentArea    = document.getElementById('content-area');
 const resCount       = document.getElementById('res-count');
 const bBack          = document.getElementById('b-back');
 
@@ -310,17 +319,18 @@ function decodeBuffer(buf) {
 // ── プロキシ経由フェッチ（並列・最速採用・キャッシュ付き）─────────────────
 async function fetchFast(url) {
   if (cache.has(url)) return cache.get(url);
-  const ctrl = new AbortController();
-  const attempts = PROXIES.map(p =>
-    fetch(p + encodeURIComponent(url), { signal: ctrl.signal })
+  // プロキシごとに独立したControllerを持つ（成功したfetchを巻き込まないため）
+  const controllers = PROXIES.map(() => new AbortController());
+  const attempts = PROXIES.map((p, i) =>
+    fetch(p + encodeURIComponent(url), { signal: controllers[i].signal })
       .then(async res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return decodeBuffer(await res.arrayBuffer());
       })
   );
   const result = await Promise.any(attempts);
-  ctrl.abort(); // 成功後、残りリクエストをキャンセル
-  cache.set(url, result);
+  controllers.forEach(c => c.abort()); // 残りをキャンセル
+  cacheSet(url, result);
   return result;
 }
 
@@ -342,12 +352,15 @@ function extractRegion(el) {
   return m ? m[1].trim() : null;
 }
 
+// PREF_MAPのキーを長さ降順でキャッシュ（起動時1回のみソート）
+const PREF_MAP_SORTED = Object.keys(PREF_MAP).sort((a, b) => b.length - a.length);
+
 function regionToPref(region) {
   if (!region) return null;
-  if (PREF_MAP[region]) return PREF_MAP[region];
-  // 「神戸・福原」などの複合地名に対する部分一致
-  for (const [area, pref] of Object.entries(PREF_MAP)) {
-    if (region.includes(area)) return pref;
+  if (PREF_MAP[region]) return PREF_MAP[region]; // 完全一致優先
+  // 長いキーから順に部分一致（「東京湾岸」→「東京」誤爆を防止）
+  for (const area of PREF_MAP_SORTED) {
+    if (region.includes(area)) return PREF_MAP[area];
   }
   return null;
 }
@@ -360,6 +373,7 @@ function highlightInElement(el, keyword) {
   let n;
   while ((n = walker.nextNode())) textNodes.push(n);
   textNodes.forEach(textNode => {
+    if (textNode.parentNode?.tagName === 'MARK') return; // 二重ネスト防止
     const text = textNode.textContent;
     if (!text.toLowerCase().includes(kw)) return;
     const frag = document.createDocumentFragment();
@@ -429,8 +443,8 @@ function applyFilter() {
   resCount.textContent = count;
   updateFilterSummary();
 
-  // キーワードハイライト（表示中エントリのみ）
-  if (activeFilter.keyword) {
+  // キーワードハイライト（2文字以上・表示中エントリのみ）
+  if (activeFilter.keyword.length >= 2) {
     entries.forEach(el => {
       if (el.style.display === 'none') return;
       el.dataset.origHtml = el.innerHTML;
@@ -657,7 +671,7 @@ function render(html, baseUrl) {
   renderedEl.innerHTML = doc.body?.innerHTML ?? '';
   renderedEl.style.display = 'block';
   statusOverlay.style.display = 'none';
-  document.getElementById('content-area').scrollTop = 0;
+  contentArea.scrollTop = scrollMap.get(baseUrl) || 0; // 保存済みなら復元、初回は先頭
 
   // nav-btn-group の直後に続く空ノード（&nbsp;含む）を除去して視覚的隙間を潰す
   renderedEl.querySelectorAll('.nav-btn-group').forEach(group => {
@@ -745,6 +759,7 @@ function updateActiveNav(url) {
 
 async function loadPage(url, push = true) {
   if (!url) return;
+  if (currentUrl) scrollMap.set(currentUrl, contentArea.scrollTop); // 現在位置を保存
   if (push && currentUrl && currentUrl !== url) historyStack.push(currentUrl);
   currentUrl = url;
   updateBackBtn();
