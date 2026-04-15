@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>日ピン研ビューア</title>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
@@ -15,14 +15,14 @@
     --header-h: 50px; --bottom-h: 56px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { height: 100vh; background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; overflow: hidden; display: flex; flex-direction: column; }
+  body { height: 100vh; height: 100dvh; background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; overflow: hidden; display: flex; flex-direction: column; }
 
   /* ヘッダー（ダークで締まりを出す） */
   header { height: var(--header-h); background: #1e293b; display: flex; align-items: center; padding: 0 4px; z-index: 100; flex-shrink: 0; }
   .menu-btn { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); cursor: pointer; border-radius: 6px; transition: color 0.15s, background 0.15s; }
   .menu-btn:active { color: #fff; background: rgba(255,255,255,0.1); }
   .menu-btn svg { width: 20px; height: 20px; stroke-width: 1.75; }
-  .header-title { flex: 1; font-weight: 700; color: #fff; text-align: center; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; letter-spacing: 0.02em; }
+  .header-title { flex: 1; font-weight: 700; color: #fff; text-align: center; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; letter-spacing: 0.02em; }
 
   /* フィルターダッシュボード */
   #filter-dashboard { background: var(--surface); border-bottom: 1px solid var(--border); z-index: 90; flex-shrink: 0; }
@@ -41,24 +41,24 @@
   /* overflow:hidden を filter-inner-content に置き、padding はsearch-box側で吸収 */
   #filter-inner-content { overflow: hidden; min-height: 0; }
 
-  .filter-row { display: flex; overflow-x: auto; padding: 7px 14px 3px; gap: 6px; scrollbar-width: none; align-items: center; }
+  .filter-row { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 7px 14px 3px; gap: 6px; scrollbar-width: none; align-items: center; }
   .filter-row::-webkit-scrollbar { display: none; }
-  .f-btn { flex: 0 0 auto; padding: 5px 13px; border-radius: 6px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; color: var(--muted); background: var(--bg); user-select: none; transition: all 0.15s; }
-  .f-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .f-btn { flex: 0 0 auto; padding: 5px 13px; border-radius: 8px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; color: var(--muted); background: var(--bg); user-select: none; transition: all 0.15s; }
+  .f-btn.active { background: rgba(37,99,235,0.14); border-color: var(--accent); color: var(--accent); font-weight: 600; }
   .row-label { flex: 0 0 auto; font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; min-width: 2.5em; }
   #search-box { padding: 7px 14px 12px; }
-  #q-input { width: 100%; height: 34px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 0 12px; font-size: 13px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+  #q-input { width: 100%; height: 34px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 0 12px; font-size: 13px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
   #q-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
   #q-input::placeholder { color: var(--muted); }
 
   /* コンテンツ */
-  #content-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; min-height: 0; }
+  #content-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; min-height: 0; box-shadow: inset 0 6px 8px -6px rgba(0,0,0,0.07); }
   #rendered { padding: 12px; display: none; color: var(--text); }
   #rendered div.box1, #rendered div.box2 {
     margin: 2px 0; padding: 10px 14px;
     background: var(--surface);
     border-left: 3px solid var(--accent-dim);
-    border-radius: 0 6px 6px 0;
+    border-radius: 0 8px 8px 0;
     font-size: 13px; line-height: 1.85;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   }
@@ -82,22 +82,25 @@
   .shop-tl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .shop-tl-title { font-size: 11px; font-weight: 700; color: var(--text); }
   .shop-tl-count { font-size: 10px; color: var(--muted); }
-  .shop-tl-links { display: flex; overflow-x: auto; gap: 6px; padding-bottom: 2px; scrollbar-width: none; }
+  .shop-tl-links { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 6px; padding-bottom: 2px; scrollbar-width: none; }
   .shop-tl-links::-webkit-scrollbar { display: none; }
-  .shop-tl-link { flex: 0 0 auto; font-size: 11px; background: var(--bg); padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); color: var(--link); cursor: pointer; user-select: none; white-space: nowrap; }
+  .shop-tl-link { flex: 0 0 auto; font-size: 11px; background: var(--bg); padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); color: var(--link); cursor: pointer; user-select: none; white-space: nowrap; }
+  .shop-tl-link.current { opacity: 0.4; pointer-events: none; cursor: default; }
+  #rendered mark { background: #fef08a; color: #0f172a; border-radius: 2px; padding: 0 1px; }
 
   /* サイドバー */
   #sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--surface); z-index: 200; transition: transform 0.3s; border-right: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.12); }
   #sidebar.open { transform: translateX(280px); }
   #nav-list { flex: 1; overflow-y: auto; }
   .nav-group-label { padding: 20px 16px 6px; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
-  .nav-item { padding: 13px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text); }
+  .nav-item { padding: 13px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text); border-left: 3px solid transparent; transition: background 0.12s, color 0.12s; }
   .nav-item:active { background: var(--accent-dim); color: var(--accent); }
+  .nav-item.active { border-left-color: var(--accent); color: var(--accent); background: var(--accent-dim); padding-left: 17px; font-weight: 600; }
   #sidebar-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 150; display: none; }
   #sidebar-overlay.open { display: block; }
 
   /* 下部ナビ */
-  #bottom-nav { height: var(--bottom-h); background: var(--surface); border-top: 1px solid var(--border); display: flex; align-items: stretch; padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0; box-shadow: 0 -1px 0 var(--border); }
+  #bottom-nav { height: auto; min-height: var(--bottom-h); background: var(--surface); border-top: 1px solid var(--border); display: flex; align-items: stretch; padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0; box-shadow: 0 -1px 0 var(--border); }
   .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 10px; cursor: pointer; padding: 6px 0; transition: color 0.15s; }
   .nav-btn:active { color: var(--accent); }
   .nav-btn svg { width: 18px; height: 18px; stroke-width: 1.75; }
@@ -190,7 +193,7 @@
 <nav id="bottom-nav">
   <div class="nav-btn" id="b-back"><i data-lucide="arrow-left"></i>戻る</div>
   <div class="nav-btn" id="b-home"><i data-lucide="home"></i>TOP</div>
-  <div class="nav-btn"><span id="res-count">-</span>件数</div>
+  <div class="nav-btn"><i data-lucide="list"></i><span id="res-count">-</span></div>
   <div class="nav-btn" id="b-ext"><i data-lucide="external-link"></i>元サイト</div>
 </nav>
 
@@ -349,12 +352,44 @@ function regionToPref(region) {
   return null;
 }
 
+// ── キーワードハイライト ───────────────────────────────────────────────────
+function highlightInElement(el, keyword) {
+  const kw = keyword.toLowerCase();
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  let n;
+  while ((n = walker.nextNode())) textNodes.push(n);
+  textNodes.forEach(textNode => {
+    const text = textNode.textContent;
+    if (!text.toLowerCase().includes(kw)) return;
+    const frag = document.createDocumentFragment();
+    let last = 0, idx;
+    while ((idx = text.toLowerCase().indexOf(kw, last)) !== -1) {
+      if (idx > last) frag.appendChild(document.createTextNode(text.slice(last, idx)));
+      const mark = document.createElement('mark');
+      mark.textContent = text.slice(idx, idx + kw.length);
+      frag.appendChild(mark);
+      last = idx + kw.length;
+    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    textNode.parentNode.replaceChild(frag, textNode);
+  });
+}
+
 // ── フィルター適用（業態 AND 地域 AND キーワード）────────────────────────
 function applyFilter() {
   activeFilter.keyword = document.getElementById('q-input').value.trim().toLowerCase();
   const entries = Array.from(document.querySelectorAll('#rendered div.box1, #rendered div.box2'));
 
   if (entries.length === 0) { resCount.textContent = '-'; return; }
+
+  // ハイライト解除（前回分を復元）
+  entries.forEach(el => {
+    if (el.dataset.origHtml !== undefined) {
+      el.innerHTML = el.dataset.origHtml;
+      delete el.dataset.origHtml;
+    }
+  });
 
   const noFilter = !activeFilter.btype && !activeFilter.pref && !activeFilter.keyword;
   if (noFilter) {
@@ -393,6 +428,15 @@ function applyFilter() {
   document.querySelectorAll('#rendered div.box3').forEach(el => el.style.display = '');
   resCount.textContent = count;
   updateFilterSummary();
+
+  // キーワードハイライト（表示中エントリのみ）
+  if (activeFilter.keyword) {
+    entries.forEach(el => {
+      if (el.style.display === 'none') return;
+      el.dataset.origHtml = el.innerHTML;
+      highlightInElement(el, activeFilter.keyword);
+    });
+  }
 }
 
 // ── フィルターサマリー更新 ─────────────────────────────────────────────────
@@ -690,11 +734,21 @@ async function extractShopTimeline(currentUrl) {
 }
 
 // ── ページ読み込み ────────────────────────────────────────────────────────
+function updateActiveNav(url) {
+  document.querySelectorAll('#nav-list .nav-item').forEach(el => el.classList.remove('active'));
+  const match = document.querySelector(`#nav-list .nav-item[data-url="${url}"]`);
+  if (match) { match.classList.add('active'); return; }
+  // ID固定項目（data-urlなし）
+  if (url.includes('pink.htm'))       document.getElementById('nav-top')?.classList.add('active');
+  else if (url.includes('historyall')) document.getElementById('nav-all')?.classList.add('active');
+}
+
 async function loadPage(url, push = true) {
   if (!url) return;
   if (push && currentUrl && currentUrl !== url) historyStack.push(currentUrl);
   currentUrl = url;
   updateBackBtn();
+  updateActiveNav(url);
 
   statusSpinner.style.display = '';
   statusMsg.textContent = '通信中...';
