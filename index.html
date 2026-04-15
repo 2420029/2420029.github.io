@@ -111,7 +111,9 @@
   #status-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); z-index: 50; }
   .spinner { width: 28px; height: 28px; border: 2px solid var(--border-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #status-retry { display: none; margin-top: 16px; padding: 8px 24px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  #status-retry { display: none; margin-top: 16px; padding: 8px 24px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  #status-back  { display: none; margin-top: 16px; padding: 8px 24px; background: transparent; color: var(--muted); border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  #status-back:active { background: var(--accent-dim); color: var(--accent); }
 </style>
 </head>
 <body>
@@ -179,6 +181,7 @@
     <div class="spinner" id="status-spinner"></div>
     <div id="status-msg" style="margin-top:10px;color:var(--muted);">通信中...</div>
     <button id="status-retry">再読込</button>
+    <button id="status-back">← 戻る</button>
   </div>
   <div id="shop-timeline">
     <div class="shop-tl-header">
@@ -295,6 +298,7 @@ const statusOverlay  = document.getElementById('status-overlay');
 const statusSpinner  = document.getElementById('status-spinner');
 const statusMsg      = document.getElementById('status-msg');
 const statusRetry    = document.getElementById('status-retry');
+const statusBack     = document.getElementById('status-back');
 const renderedEl     = document.getElementById('rendered');
 const contentArea    = document.getElementById('content-area');
 const resCount       = document.getElementById('res-count');
@@ -776,10 +780,20 @@ async function loadPage(url, push = true) {
 
   try {
     render(await fetchFast(url), url);
-  } catch {
+  } catch(err) {
     statusSpinner.style.display = 'none';
-    statusMsg.textContent = '接続エラー';
-    statusRetry.style.display = '';
+    // 全プロキシが HTTP 4xx を返した場合はリンク切れと判定
+    const isDeadLink = err instanceof AggregateError &&
+      err.errors.every(e => /HTTP 4/.test(e.message));
+    if (isDeadLink) {
+      statusMsg.textContent = 'このリンクは現在アクセスできません。';
+      statusBack.style.display  = '';
+      statusRetry.style.display = 'none';
+    } else {
+      statusMsg.textContent = '接続エラー';
+      statusRetry.style.display = '';
+      statusBack.style.display  = 'none';
+    }
   }
 }
 
@@ -812,6 +826,14 @@ document.getElementById('b-home').onclick   = () => loadPage('https://pinsalo.in
 document.getElementById('b-back').onclick   = () => { if (historyStack.length > 0) { loadPage(historyStack.pop(), false); } };
 document.getElementById('b-ext').onclick    = () => { if (currentUrl) window.open(currentUrl, '_blank'); };
 statusRetry.onclick = () => { cache.delete(currentUrl); loadPage(currentUrl, false); };
+statusBack.onclick  = () => {
+  if (historyStack.length > 0) {
+    currentUrl = '';
+    loadPage(historyStack.pop(), false);
+  } else {
+    loadPage('https://pinsalo.info/sp/pink.htm');
+  }
+};
 document.getElementById('q-input').oninput  = applyFilter;
 document.getElementById('filter-toggle-bar').onclick = () => {
   document.getElementById('filter-dashboard').classList.toggle('collapsed');
