@@ -3,99 +3,112 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>日ピン研 Viewer Mobile</title>
+<title>日ピン研ビューア</title>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Share+Tech+Mono&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
   :root {
-    --bg: #0d1117; --surface: #161b22; --border: #30363d;
-    --accent: #f0883e; --text: #c9d1d9; --muted: #8b949e; --link: #58a6ff;
-    --header-h: 50px; --bottom-h: 60px;
+    --bg: #f1f5f9; --surface: #ffffff; --surface2: #f8fafc;
+    --border: #e2e8f0; --border-strong: #cbd5e1;
+    --accent: #2563eb; --accent-dim: rgba(37,99,235,0.08);
+    --text: #0f172a; --muted: #64748b; --link: #2563eb;
+    --header-h: 50px; --bottom-h: 56px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { height: 100vh; background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; overflow: hidden; display: flex; flex-direction: column; }
 
-  /* ヘッダー */
-  header { height: var(--header-h); background: var(--surface); display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid var(--border); z-index: 100; flex-shrink: 0; }
-  .menu-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--accent); cursor: pointer; }
-  .header-title { flex: 1; font-family: 'Share Tech Mono'; font-weight: bold; color: var(--accent); text-align: center; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 5px; }
+  /* ヘッダー（ダークで締まりを出す） */
+  header { height: var(--header-h); background: #1e293b; display: flex; align-items: center; padding: 0 4px; z-index: 100; flex-shrink: 0; }
+  .menu-btn { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); cursor: pointer; border-radius: 6px; transition: color 0.15s, background 0.15s; }
+  .menu-btn:active { color: #fff; background: rgba(255,255,255,0.1); }
+  .menu-btn svg { width: 20px; height: 20px; stroke-width: 1.75; }
+  .header-title { flex: 1; font-weight: 700; color: #fff; text-align: center; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; letter-spacing: 0.02em; }
 
   /* フィルターダッシュボード */
-  #filter-dashboard { background: var(--surface); border-bottom: 1px solid var(--border); z-index: 90; box-shadow: 0 4px 10px rgba(0,0,0,0.3); flex-shrink: 0; }
-
-  /* トグルバー（常時表示） */
-  #filter-toggle-bar {
-    display: flex; align-items: center; gap: 6px;
-    padding: 0 12px; height: 34px; cursor: pointer; user-select: none;
-  }
-  #filter-toggle-label { font-size: 9px; font-weight: bold; color: var(--accent); border: 1px solid var(--accent); padding: 1px 5px; border-radius: 3px; white-space: nowrap; }
-  #filter-summary { flex: 1; font-size: 10px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0; transition: opacity 0.2s; }
+  #filter-dashboard { background: var(--surface); border-bottom: 1px solid var(--border); z-index: 90; flex-shrink: 0; }
+  #filter-dashboard.hidden { display: none; }
+  #filter-toggle-bar { display: flex; align-items: center; padding: 13px 18px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); transition: background 0.12s; }
+  #filter-toggle-bar:active { background: var(--accent-dim); }
+  #filter-dashboard:not(.collapsed) #filter-toggle-bar { border-bottom: none; }
+  #filter-toggle-label { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; }
+  #filter-summary { flex: 1; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0; transition: opacity 0.2s; padding-left: 8px; }
   #filter-dashboard.collapsed #filter-summary { opacity: 1; }
-  #filter-toggle-icon { font-size: 13px; color: var(--muted); transition: transform 0.25s; margin-left: auto; }
-  #filter-dashboard.collapsed #filter-toggle-icon { transform: rotate(-90deg); }
+  #filter-toggle-icon { margin-left: auto; color: var(--muted); font-size: 18px; font-weight: 300; line-height: 1; transition: transform 0.25s; }
+  #filter-dashboard:not(.collapsed) #filter-toggle-icon { transform: rotate(90deg); }
 
-  /* 展開アニメーション（CSS Grid trick） */
   #filter-inner { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.25s ease; }
   #filter-dashboard.collapsed #filter-inner { grid-template-rows: 0fr; }
-  #filter-inner-content { overflow: hidden; padding-bottom: 8px; }
+  /* overflow:hidden を filter-inner-content に置き、padding はsearch-box側で吸収 */
+  #filter-inner-content { overflow: hidden; min-height: 0; }
 
-  .filter-row { display: flex; overflow-x: auto; padding: 6px 12px 2px; gap: 8px; scrollbar-width: none; align-items: center; }
+  .filter-row { display: flex; overflow-x: auto; padding: 7px 14px 3px; gap: 6px; scrollbar-width: none; align-items: center; }
   .filter-row::-webkit-scrollbar { display: none; }
-  .f-btn { flex: 0 0 auto; padding: 5px 12px; border-radius: 16px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; color: var(--muted); background: var(--bg); user-select: none; }
-  .f-btn.active { background: rgba(240,136,62,0.2); border-color: var(--accent); color: var(--accent); }
-  .row-label { flex: 0 0 auto; font-size: 9px; color: var(--accent); font-weight: bold; margin-right: 4px; border: 1px solid var(--accent); padding: 1px 4px; border-radius: 3px; white-space: nowrap; }
-  #search-box { padding: 6px 12px; }
-  #q-input { width: 100%; height: 32px; background: var(--bg); border: 1px solid var(--border); border-radius: 16px; color: var(--text); padding: 0 12px; font-size: 13px; outline: none; }
-  #q-input:focus { border-color: var(--accent); }
+  .f-btn { flex: 0 0 auto; padding: 5px 13px; border-radius: 6px; border: 1px solid var(--border); font-size: 11px; cursor: pointer; color: var(--muted); background: var(--bg); user-select: none; transition: all 0.15s; }
+  .f-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .row-label { flex: 0 0 auto; font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; min-width: 2.5em; }
+  #search-box { padding: 7px 14px 12px; }
+  #q-input { width: 100%; height: 34px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 0 12px; font-size: 13px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+  #q-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  #q-input::placeholder { color: var(--muted); }
 
   /* コンテンツ */
   #content-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; min-height: 0; }
-  #rendered { padding: 12px; display: none; }
-  /* box1/box2/box3 のダークテーマ再現 */
+  #rendered { padding: 12px; display: none; color: var(--text); }
   #rendered div.box1, #rendered div.box2 {
-    margin: 2px 0; padding: 8px 10px;
-    background: rgba(255,255,255,0.03);
-    border-left: 3px solid var(--border);
-    border-radius: 0 4px 4px 0;
-    font-size: 13px; line-height: 1.7;
+    margin: 2px 0; padding: 10px 14px;
+    background: var(--surface);
+    border-left: 3px solid var(--accent-dim);
+    border-radius: 0 6px 6px 0;
+    font-size: 13px; line-height: 1.85;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   }
-  #rendered div.box3 { margin: 8px 0 4px; padding: 4px 10px; color: var(--accent); font-weight: bold; font-size: 13px; }
+  #rendered div.box3 { margin: 16px 0 4px; padding: 0 14px; color: var(--muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
   #rendered table { width: 100% !important; border-collapse: collapse; margin: 10px 0; font-size: 12px; table-layout: fixed; }
-  #rendered td { border: 1px solid var(--border); padding: 6px; vertical-align: top; color: var(--text) !important; background: transparent !important; word-wrap: break-word; }
+  #rendered td { border: 1px solid var(--border); padding: 7px; vertical-align: top; color: var(--text) !important; background: var(--surface) !important; word-wrap: break-word; }
   #rendered a { color: var(--link); text-decoration: none; }
-  #rendered img { max-width: 100% !important; height: auto !important; border-radius: 4px; }
+
+  /* ナビメニュー（縦リスト・カテゴリ付き） */
+  .nav-btn-group { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .nav-category-header { padding: 12px 18px 4px; font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; background: var(--bg); border-top: 1px solid var(--border); }
+  .nav-btn-group > a[data-nav-btn]:first-child { border-top: none; }
+  .nav-category-header:first-child { border-top: none; }
+  .nav-btn-group a[data-nav-btn] { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); border-top: none; background: transparent; color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.12s; }
+  .nav-btn-group a[data-nav-btn]::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 18px; font-weight: 300; }
+  .nav-btn-group a[data-nav-btn]:active { background: var(--accent-dim); color: var(--accent); }
+  #rendered img { max-width: 100% !important; height: auto !important; border-radius: 6px; }
 
   /* 店舗タイムライン */
-  #shop-timeline { margin: 10px; padding: 10px 12px; background: rgba(88,166,255,0.06); border: 1px dashed var(--link); border-radius: 8px; display: none; }
-  .shop-tl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .shop-tl-title { font-size: 10px; font-weight: bold; color: var(--link); }
-  .shop-tl-count { font-size: 10px; color: var(--muted); font-family: 'Share Tech Mono'; }
-  .shop-tl-links { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 4px; scrollbar-width: none; }
+  #shop-timeline { margin: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: none; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .shop-tl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .shop-tl-title { font-size: 11px; font-weight: 700; color: var(--text); }
+  .shop-tl-count { font-size: 10px; color: var(--muted); }
+  .shop-tl-links { display: flex; overflow-x: auto; gap: 6px; padding-bottom: 2px; scrollbar-width: none; }
   .shop-tl-links::-webkit-scrollbar { display: none; }
-  .shop-tl-link { flex: 0 0 auto; font-size: 10px; background: var(--surface); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border); color: var(--link); cursor: pointer; user-select: none; white-space: nowrap; }
+  .shop-tl-link { flex: 0 0 auto; font-size: 11px; background: var(--bg); padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); color: var(--link); cursor: pointer; user-select: none; white-space: nowrap; }
 
   /* サイドバー */
-  #sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--surface); z-index: 200; transition: transform 0.3s; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+  #sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--surface); z-index: 200; transition: transform 0.3s; border-right: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.12); }
   #sidebar.open { transform: translateX(280px); }
   #nav-list { flex: 1; overflow-y: auto; }
-  .nav-group-label { padding: 18px 15px 8px; font-size: 11px; color: var(--accent); font-weight: bold; background: rgba(240,136,62,0.05); letter-spacing: 0.05em; }
-  .nav-item { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; cursor: pointer; }
-  .nav-item:active { background: rgba(255,255,255,0.06); }
-  #sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 150; display: none; }
+  .nav-group-label { padding: 20px 16px 6px; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .nav-item { padding: 13px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text); }
+  .nav-item:active { background: var(--accent-dim); color: var(--accent); }
+  #sidebar-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 150; display: none; }
   #sidebar-overlay.open { display: block; }
 
   /* 下部ナビ */
-  #bottom-nav { height: var(--bottom-h); background: var(--surface); border-top: 1px solid var(--border); display: flex; align-items: center; padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0; }
-  .nav-btn { flex: 1; text-align: center; color: var(--muted); font-size: 10px; cursor: pointer; padding: 8px 0; transition: color 0.15s; }
+  #bottom-nav { height: var(--bottom-h); background: var(--surface); border-top: 1px solid var(--border); display: flex; align-items: stretch; padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0; box-shadow: 0 -1px 0 var(--border); }
+  .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 10px; cursor: pointer; padding: 6px 0; transition: color 0.15s; }
   .nav-btn:active { color: var(--accent); }
-  .nav-btn i { display: block; font-size: 20px; font-style: normal; margin-bottom: 2px; }
+  .nav-btn svg { width: 18px; height: 18px; stroke-width: 1.75; }
   #b-back { transition: opacity 0.2s; }
-  #res-count { color: var(--accent); font-family: 'Share Tech Mono'; font-size: 15px; font-weight: bold; }
+  #res-count { color: var(--accent); font-size: 15px; font-weight: 700; line-height: 1; }
 
   /* ステータスオーバーレイ */
   #status-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); z-index: 50; }
-  .spinner { width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #status-retry { display: none; margin-top: 16px; padding: 8px 24px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; }
+  #status-retry { display: none; margin-top: 16px; padding: 8px 24px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -104,11 +117,11 @@
 <div id="sidebar">
   <div style="padding:15px;color:var(--accent);font-weight:bold;font-size:18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
     <span>MENU</span>
-    <span id="m-close" style="font-size:20px;padding:5px;cursor:pointer;">✕</span>
+    <span id="m-close" style="display:flex;align-items:center;padding:6px;cursor:pointer;color:var(--muted);"><i data-lucide="x"></i></span>
   </div>
   <div id="nav-list">
-    <div class="nav-item" id="nav-top">🏠 トップページ</div>
-    <div class="nav-item" id="nav-all">📋 全期間・更新履歴一覧</div>
+    <div class="nav-item" id="nav-top">トップページ</div>
+    <div class="nav-item" id="nav-all">全期間・更新履歴一覧</div>
     <div id="reiwa-list"></div>
     <div id="heisei-late-list"></div>
     <div id="heisei-early-list"></div>
@@ -116,16 +129,16 @@
 </div>
 
 <header>
-  <div class="menu-btn" id="m-toggle">☰</div>
-  <div class="header-title" id="page-title">日ピン研 VIEWER</div>
-  <div class="menu-btn" id="m-reload">↺</div>
+  <div class="menu-btn" id="m-toggle"><i data-lucide="menu"></i></div>
+  <div class="header-title" id="page-title">日ピン研ビューア</div>
+  <div class="menu-btn" id="m-reload"><i data-lucide="refresh-cw"></i></div>
 </header>
 
-<div id="filter-dashboard" class="collapsed">
+<div id="filter-dashboard" class="collapsed hidden">
   <div id="filter-toggle-bar">
     <span id="filter-toggle-label">フィルター</span>
     <span id="filter-summary"></span>
-    <span id="filter-toggle-icon">▾</span>
+    <span id="filter-toggle-icon">›</span>
   </div>
   <div id="filter-inner">
     <div id="filter-inner-content">
@@ -175,10 +188,10 @@
 </div>
 
 <nav id="bottom-nav">
-  <div class="nav-btn" id="b-back"><i>←</i>戻る</div>
-  <div class="nav-btn" id="b-home"><i>🏠</i>TOP</div>
-  <div class="nav-btn"><span id="res-count">-</span><br>件数</div>
-  <div class="nav-btn" id="b-ext"><i>↗</i>元サイト</div>
+  <div class="nav-btn" id="b-back"><i data-lucide="arrow-left"></i>戻る</div>
+  <div class="nav-btn" id="b-home"><i data-lucide="home"></i>TOP</div>
+  <div class="nav-btn"><span id="res-count">-</span>件数</div>
+  <div class="nav-btn" id="b-ext"><i data-lucide="external-link"></i>元サイト</div>
 </nav>
 
 <script>
@@ -396,13 +409,184 @@ function updateFilterSummary() {
   document.getElementById('filter-summary').textContent = parts.join(' › ');
 }
 
+// ── 画像ボタン → テキストボタン置換 ──────────────────────────────────────
+const NAV_LABELS = {
+  'pink.htm':       'トップページ',
+  'today.htm':      '本日掲載',
+  'repo_e.htm':     '東日本',
+  'repo_w.htm':     '西日本',
+  'oversea.htm':    '海外',
+  'history.htm':    '更新履歴',
+  'historyall.htm': '全期間履歴',
+  'papers.htm':     '研究論文',
+  'kaimuall.htm':   '会務報告',
+  'ranking.php':    'ランキング',
+  'bosyu.htm':      '会員募集',
+  'new_mmb.htm':    '人事異動',
+  'organ.htm':      '会員一覧',
+};
+
+// ナビメニュー カテゴリ定義（Option A）
+const NAV_HOME_FNAME = 'pink.htm';
+const NAV_CATEGORY_DEFS = [
+  { label: 'レポート',  fnames: ['today.htm','repo_e.htm','repo_w.htm','oversea.htm','history.htm','historyall.htm'] },
+  { label: '研究・情報', fnames: ['papers.htm','ranking.php','kaimuall.htm'] },
+  { label: '組織・参加', fnames: ['bosyu.htm','new_mmb.htm','organ.htm'] },
+];
+
+// imgファイル名から年号ラベルを導出（R08.png→令和8年、h31.png→平成31年）
+function labelFromImgSrc(img) {
+  const fname = (img.getAttribute('src') || '').split('/').pop();
+  let m = fname.match(/^R0*(\d+)\.png$/i);
+  if (m) return `令和${m[1]}年`;
+  m = fname.match(/^h(\d+)\.png$/i);
+  if (m) return `平成${m[1]}年`;
+  return '';
+}
+
+function replaceImgButtons(doc) {
+  const navEntries = []; // { btn, fname, isYear, isMailto }
+
+  doc.querySelectorAll('a').forEach(a => {
+    // テキストノードが実質空で img を含むリンクだけ対象
+    if (a.textContent.trim()) return;
+    const img = a.querySelector('img');
+    if (!img) return;
+
+    const href = a.getAttribute('href') || '';
+    let label = '';
+    let finalHref = href;
+    let fname = '';
+    let isYear = false;
+    let isMailto = false;
+
+    if (href.startsWith('mailto:')) {
+      label = 'レポート投稿';
+      isMailto = true;
+      fname = 'mailto:';
+    } else {
+      const jtpMatch = href.match(/JavaScript:TP\(['"](.+?)['"]\)/i);
+      if (jtpMatch) finalHref = new URL(jtpMatch[1], 'https://pinsalo.info/sp/').href;
+      fname = finalHref.split('/').pop().split('?')[0];
+      const yearLabel = labelFromImgSrc(img);
+      if (NAV_LABELS[fname]) {
+        label = NAV_LABELS[fname];
+      } else if (yearLabel) {
+        label = yearLabel;
+        isYear = true;
+      } else {
+        label = img.getAttribute('alt') || '';
+      }
+    }
+
+    if (!label) return;
+
+    // テキストボタンを生成
+    const btn = doc.createElement('a');
+    btn.setAttribute('href', finalHref);
+    btn.setAttribute('data-nav-btn', '');
+    btn.textContent = label;
+    navEntries.push({ btn, fname, isYear, isMailto });
+
+    // 元の <a> を除去。親が空になれば親も除去
+    const parent = a.parentNode;
+    a.remove();
+    if (parent && parent !== doc.body && !parent.textContent.trim() && parent.children.length === 0) {
+      parent.remove();
+    }
+  });
+
+  // 装飾画像（/img/ 配下）を除去
+  doc.querySelectorAll('img').forEach(img => {
+    if (/pinsalo\.info\/img\//i.test(img.getAttribute('src') || '')) img.remove();
+  });
+
+  // ナビリンク・デコ画像除去後に残った空の構造タグ（table/tr/td等）をボトムアップで除去
+  // box1/box2/box3 の内部には手を付けない
+  (function cleanEmpty(el) {
+    if (/\bbox[123]\b/.test(el.className)) return;
+    Array.from(el.children).forEach(cleanEmpty);
+    if (el === doc.body) return;
+    const text = (el.textContent || '').replace(/[\s\u00a0\u3000]/g, '');
+    if (!text && !el.querySelector('a[href],img[src],input,select,textarea')) {
+      el.remove();
+    }
+  })(doc.body);
+
+  if (navEntries.length === 0) return;
+
+  // ① ホームボタンを body 先頭に単独挿入
+  const homeEntry = navEntries.find(e => e.fname === NAV_HOME_FNAME);
+  let homeGroup = null;
+  if (homeEntry) {
+    homeGroup = doc.createElement('div');
+    homeGroup.className = 'nav-btn-group';
+    homeGroup.appendChild(homeEntry.btn);
+    doc.body.insertBefore(homeGroup, doc.body.firstChild);
+  }
+
+  // ② カテゴリナビを構築
+  const catGroup = doc.createElement('div');
+  catGroup.className = 'nav-btn-group';
+  let hasCatBtns = false;
+
+  NAV_CATEGORY_DEFS.forEach(cat => {
+    const fnameSet = new Set(cat.fnames);
+    let catEntries;
+    if (cat.label === 'レポート') {
+      catEntries = navEntries.filter(e => fnameSet.has(e.fname) || e.isYear);
+    } else if (cat.label === '組織・参加') {
+      catEntries = navEntries.filter(e => fnameSet.has(e.fname) || e.isMailto);
+    } else {
+      catEntries = navEntries.filter(e => fnameSet.has(e.fname));
+    }
+    if (catEntries.length === 0) return;
+
+    const header = doc.createElement('div');
+    header.className = 'nav-category-header';
+    header.textContent = cat.label;
+    catGroup.appendChild(header);
+    catEntries.forEach(e => catGroup.appendChild(e.btn));
+    hasCatBtns = true;
+  });
+
+  if (hasCatBtns) {
+    // ホームグループの直後から実コンテンツが始まるまでの空ノードを除去
+    // （&nbsp;・空テキスト・リンクも画像も持たない空要素が対象）
+    const isEmptyNode = n => {
+      if (n.nodeType === 3) return !n.textContent.replace(/[\s\u00a0]/g, ''); // テキストノード
+      if (n.nodeType !== 1) return true;
+      const text = n.textContent.replace(/[\s\u00a0]/g, '');
+      return !text && !n.querySelector('a,img,input,button,select,textarea');
+    };
+    let cur = homeGroup ? homeGroup.nextSibling : doc.body.firstChild;
+    while (cur) {
+      const next = cur.nextSibling;
+      if (isEmptyNode(cur)) { cur.remove(); cur = next; }
+      else break;
+    }
+
+    // body に homeGroup 以外の実コンテンツがあるか確認
+    let bodyText = '';
+    for (const child of doc.body.childNodes) {
+      if (child !== homeGroup) bodyText += (child.textContent || '').replace(/[\s\u00a0]/g, '');
+    }
+    if (bodyText.length > 10) {
+      // コンテンツあり → カテゴリは末尾
+      doc.body.appendChild(catGroup);
+    } else {
+      // コンテンツなし → ホームの直後に連結（隙間ゼロ）
+      const insertBefore = homeGroup ? homeGroup.nextSibling : null;
+      doc.body.insertBefore(catGroup, insertBefore);
+    }
+  }
+}
+
 // ── レンダリング ──────────────────────────────────────────────────────────
 function render(html, baseUrl) {
   const parser = new DOMParser();
   const doc    = parser.parseFromString(html, 'text/html');
   const base   = new URL(baseUrl);
-
-  document.getElementById('page-title').textContent = doc.title || '日ピン研';
 
   // URL 絶対化
   doc.querySelectorAll('[src],[href]').forEach(el => {
@@ -410,24 +594,47 @@ function render(html, baseUrl) {
     try { el.setAttribute(attr, new URL(el.getAttribute(attr), base).href); } catch {}
   });
 
-  // 広告・スクリプト除去（dtiserv / affiliate ドメインも含む）
+  // 広告・スクリプト除去
   [
     'script','noscript','iframe','object','embed','ins','ads',
     '[src*="dtiserv"]','[href*="dtiserv"]',
     '[src*="affiliate"]','[href*="affiliate"]',
     '[src*="adserv"]','[href*="adserv"]',
+    '[href*="precious"]',
   ].forEach(sel => doc.querySelectorAll(sel).forEach(e => e.remove()));
 
   // ダークモード調整（黒文字・背景色の除去）
   doc.querySelectorAll('[bgcolor]').forEach(el => el.removeAttribute('bgcolor'));
   doc.querySelectorAll('[color="#000000"],[color="#000"],[color="black"]').forEach(el => el.removeAttribute('color'));
 
+  // 画像ボタン → テキストボタン置換
+  replaceImgButtons(doc);
+
   renderedEl.innerHTML = doc.body?.innerHTML ?? '';
   renderedEl.style.display = 'block';
   statusOverlay.style.display = 'none';
   document.getElementById('content-area').scrollTop = 0;
 
+  // nav-btn-group の直後に続く空ノード（&nbsp;含む）を除去して視覚的隙間を潰す
+  renderedEl.querySelectorAll('.nav-btn-group').forEach(group => {
+    let node = group.nextSibling;
+    while (node) {
+      const next = node.nextSibling;
+      const text = (node.textContent || '').replace(/[\s\u00a0]/g, '');
+      const isEmpty = node.nodeType === 3
+        ? !text
+        : node.nodeType === 1 && !text && !node.querySelector('a,img,input,button,select');
+      if (isEmpty) { node.remove(); node = next; }
+      else break;
+    }
+  });
+
   applyFilter();
+
+  // レポート一覧（box1/box2）がある時だけフィルターを表示
+  const hasEntries = document.querySelectorAll('#rendered div.box1, #rendered div.box2').length > 0;
+  document.getElementById('filter-dashboard').classList.toggle('hidden', !hasEntries);
+
   extractShopTimeline(baseUrl);
 }
 
@@ -594,7 +801,7 @@ function initArchiveMenu() {
   for (const [id, { title, items }] of Object.entries(archives)) {
     document.getElementById(id).innerHTML =
       `<div class="nav-group-label">${title}</div>`
-      + items.map(([n, u]) => `<div class="nav-item" data-url="https://pinsalo.info/sp/${u}.htm">🗓 ${n}</div>`).join('');
+      + items.map(([n, u]) => `<div class="nav-item" data-url="https://pinsalo.info/sp/${u}.htm">${n}</div>`).join('');
     document.getElementById(id).querySelectorAll('.nav-item').forEach(el => {
       el.onclick = () => loadPage(el.dataset.url);
     });
@@ -604,6 +811,7 @@ function initArchiveMenu() {
 // ── 起動 ─────────────────────────────────────────────────────────────────
 updateBackBtn();
 initArchiveMenu();
+lucide.createIcons();
 loadPage('https://pinsalo.info/sp/pink.htm');
 </script>
 </body>
