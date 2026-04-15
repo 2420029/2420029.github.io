@@ -693,9 +693,10 @@ function render(html, baseUrl) {
 
   applyFilter();
 
-  // レポート一覧（box1/box2）がある時だけフィルターを表示
+  // box1/box2 がある、または historyall.htm のときフィルターを表示
   const hasEntries = document.querySelectorAll('#rendered div.box1, #rendered div.box2').length > 0;
-  document.getElementById('filter-dashboard').classList.toggle('hidden', !hasEntries);
+  const isHistoryAll = /historyall\.htm/i.test(baseUrl);
+  document.getElementById('filter-dashboard').classList.toggle('hidden', !hasEntries && !isHistoryAll);
 
   extractShopTimeline(baseUrl);
 }
