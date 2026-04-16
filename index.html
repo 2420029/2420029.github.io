@@ -35,6 +35,8 @@
   #filter-dashboard.collapsed #filter-summary { opacity: 1; }
   #filter-toggle-icon { margin-left: auto; color: var(--muted); font-size: 18px; font-weight: 300; line-height: 1; transition: transform 0.25s; }
   #filter-dashboard:not(.collapsed) #filter-toggle-icon { transform: rotate(90deg); }
+  #filter-clear-btn { flex-shrink: 0; margin-left: 8px; margin-right: 10px; height: 34px; padding: 0 14px; font-size: 13px; font-weight: 700; color: var(--muted); background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+  #filter-clear-btn:active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 
   #filter-inner { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.25s ease; }
   #filter-dashboard.collapsed #filter-inner { grid-template-rows: 0fr; }
@@ -145,6 +147,7 @@
   <div id="filter-toggle-bar">
     <span id="filter-toggle-label">フィルター</span>
     <span id="filter-summary"></span>
+    <button id="filter-clear-btn">クリア</button>
     <span id="filter-toggle-icon">›</span>
   </div>
   <div id="filter-inner">
@@ -285,7 +288,7 @@ let currentUrl = '';
 const historyStack = [];
 const cache = new Map();
 const scrollMap = new Map();
-let activeFilter = { btype: '', texts: [], pref: '', keyword: '' };
+let activeFilter = { btype: '', texts: [], region: '', pref: '', keyword: '' };
 let histYearUrls  = [];   // historyall.htm の各年ページURL
 let histIndexCache = null; // 全年ページのレポートリンク一覧（{ href, text }[]）
 
@@ -356,8 +359,8 @@ function getEntryBtype(el) {
 // ── 地名抽出 & 都道府県変換 ───────────────────────────────────────────────
 function extractRegion(el) {
   const text = el.textContent;
-  // 「店名」（地名） の形を優先、なければ最初の（）
-  const m = text.match(/」（([^）]+)）/) || text.match(/（([^）]+)）/);
+  // 「店名」（地名） の形のみ許可（懇親会/調査報告の混入防止）
+  const m = text.match(/」（([^）]+)）/);
   return m ? m[1].trim() : null;
 }
 
@@ -407,7 +410,7 @@ function applyFilter() {
   const histMain    = document.getElementById('hist-main');
   const histResults = document.getElementById('hist-results');
   if (histMain && histResults) {
-    const hasFilter = !!(activeFilter.keyword || activeFilter.btype || activeFilter.pref);
+    const hasFilter = !!(activeFilter.keyword || activeFilter.btype || activeFilter.region || activeFilter.pref);
     histMain.style.display    = hasFilter ? 'none' : '';
     histResults.style.display = hasFilter ? ''     : 'none';
     if (!hasFilter) {
@@ -415,13 +418,9 @@ function applyFilter() {
       updateFilterSummary();
       return;
     }
-    // キーワードがある場合は全年ページ串刺し検索を実行
-    if (activeFilter.keyword) {
-      searchHistoryAll(activeFilter.keyword);
-      return;
-    }
-    // キーワードなし（業態・地域のみ）は通常フィルターへフォールスルー
-    // hist-results 内の box1 を対象にする
+    // フィルターあり → 全年ページ串刺し検索を実行
+    searchHistoryAll(activeFilter.keyword);
+    return;
   }
 
   const entries = Array.from(document.querySelectorAll('#rendered div.box1, #rendered div.box2'));
@@ -436,7 +435,7 @@ function applyFilter() {
     }
   });
 
-  const noFilter = !activeFilter.btype && !activeFilter.pref && !activeFilter.keyword;
+  const noFilter = !activeFilter.btype && !activeFilter.region && !activeFilter.pref && !activeFilter.keyword;
   if (noFilter) {
     entries.forEach(el => el.style.display = '');
     resCount.textContent = entries.length;
@@ -447,18 +446,35 @@ function applyFilter() {
   entries.forEach(el => {
     const text = el.textContent.toLowerCase();
 
-    // 業態判定（URLコード優先 → テキスト fallback）
+    // 業態判定（URLコード優先 → PREF_MAP に載る地名括弧があれば店舗レポート）
     let bHit = true;
     if (activeFilter.btype) {
       const btype = getEntryBtype(el);
-      bHit = btype ? btype === activeFilter.btype
-                   : activeFilter.texts.some(t => text.includes(t));
+      if (btype) {
+        bHit = btype === activeFilter.btype;
+      } else {
+        // URL判定不能 → 「店名」（地名） 形式で既知地名に一致する場合のみ店舗レポート
+        const m = el.textContent.match(/」（([^）]+)）/);
+        const loc = m ? m[1].trim() : null;
+        bHit = !!(loc && regionToPref(loc));
+      }
     }
 
-    // 地域判定（PREF_MAP経由で 吉原→東京 等も正しくマッチ）
+    // 地域判定：県（pref）優先、なければ地方（region）で絞り込み
+    // 括弧なし（地域不明）は除外
     let pHit = true;
-    if (activeFilter.pref) {
-      pHit = regionToPref(extractRegion(el)) === activeFilter.pref;
+    if (activeFilter.pref || activeFilter.region) {
+      const loc = extractRegion(el);
+      if (!loc) {
+        pHit = false;  // 括弧なし→除外
+      } else {
+        const pref = regionToPref(loc);
+        if (activeFilter.pref) {
+          pHit = pref === activeFilter.pref;
+        } else {
+          pHit = !!pref && (REGION_MAP[activeFilter.region] || []).includes(pref);
+        }
+      }
     }
 
     // キーワード判定
@@ -819,15 +835,46 @@ async function searchHistoryAll(keyword) {
       histIndexCache = entries;
     }
 
-    // キーワードフィルタ
+    // キーワード・業種・地域フィルタ
     const kw = keyword.toLowerCase();
-    const filtered = kw
-      ? histIndexCache.filter(e => e.text.toLowerCase().includes(kw))
-      : histIndexCache;
+    const filtered = histIndexCache.filter(e => {
+      const t = e.text.toLowerCase();
+      // キーワード
+      if (kw && !t.includes(kw)) return false;
+      // 業種（URLコード優先 → 判定不能なら PREF_MAP に載る地名括弧があれば店舗レポート）
+      if (activeFilter.btype) {
+        const seg = e.href.split('/').pop().replace(/\.[^.]+$/, '').split('_').pop()?.toLowerCase();
+        const btype = seg ? (BTYPE_RULES.find(r => seg.startsWith(r.p))?.b ?? null) : null;
+        if (btype) {
+          if (btype !== activeFilter.btype) return false;
+        } else {
+          // URL判定不能 → 「店名」（地名） 形式で既知地名に一致する場合のみ店舗レポート
+          const m = e.text.match(/」（([^）]+)）/);
+          const loc = m ? m[1].trim() : null;
+          if (!loc || !regionToPref(loc)) return false;
+        }
+      }
+      // 地域（県 or 地方）— 「店名」（地名）形式のみ許可
+      if (activeFilter.pref || activeFilter.region) {
+        const m = e.text.match(/」（([^）]+)）/);
+        const loc = m ? m[1].trim() : null;
+        if (!loc) return false;  // 括弧なし→店舗レポートでないとして除外
+        const pref = regionToPref(loc);
+        if (activeFilter.pref) {
+          if (pref !== activeFilter.pref) return false;
+        } else if (activeFilter.region) {
+          if (!pref || !(REGION_MAP[activeFilter.region] || []).includes(pref)) return false;
+        }
+      }
+      return true;
+    });
+
+    const noMatch = filtered.length === 0;
+    const label = [kw, activeFilter.btype, activeFilter.pref].filter(Boolean).join('・');
 
     // 結果描画
-    if (filtered.length === 0) {
-      results.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">「${keyword}」に一致するレポートは見つかりませんでした</div>`;
+    if (noMatch) {
+      results.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">${label ? `「${label}」に` : ''}一致するレポートは見つかりませんでした</div>`;
     } else {
       results.innerHTML = '';
       filtered.forEach(e => {
@@ -1016,28 +1063,51 @@ statusBack.onclick  = () => {
     loadPage('https://pinsalo.info/sp/pink.htm');
   }
 };
-document.getElementById('q-input').oninput  = applyFilter;
-document.getElementById('q-input').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); applyFilter(); document.getElementById('q-input').blur(); } };
-document.getElementById('q-go').onclick      = () => { applyFilter(); document.getElementById('q-input').blur(); };
+// キーワード入力：IME確定のEnterは無視、文字確定後のEnterのみ実行
+document.getElementById('q-input').onkeydown = e => {
+  if (e.key === 'Enter' && !e.isComposing) {
+    e.preventDefault();
+    document.getElementById('q-input').blur();
+    document.getElementById('filter-dashboard').classList.add('collapsed');
+    applyFilter();
+  }
+};
+document.getElementById('q-go').onclick = () => {
+  document.getElementById('q-input').blur();
+  document.getElementById('filter-dashboard').classList.add('collapsed');
+  applyFilter();
+};
 document.getElementById('filter-toggle-bar').onclick = () => {
   document.getElementById('filter-dashboard').classList.toggle('collapsed');
+};
+// クリアボタン（バブリングでトグルが動かないよう stopPropagation）
+document.getElementById('filter-clear-btn').onclick = e => {
+  e.stopPropagation();
+  const qInput = document.getElementById('q-input');
+  qInput.value = '';
+  activeFilter = { btype: '', texts: [], region: '', pref: '', keyword: '' };
+  // 業種・地域ボタンを初期状態（全て／全国）に戻す
+  document.querySelectorAll('#btype-row .f-btn').forEach(b => b.classList.toggle('active', b.dataset.btype === ''));
+  document.querySelectorAll('#region-row .f-btn').forEach(b => b.classList.toggle('active', b.dataset.region === 'all'));
+  document.getElementById('pref-row').style.display = 'none';
+  document.getElementById('pref-chips-container').innerHTML = '';
+  applyFilter();
 };
 
 document.getElementById('nav-top').onclick = () => loadPage('https://pinsalo.info/sp/pink.htm');
 document.getElementById('nav-all').onclick = () => loadPage('https://pinsalo.info/sp/historyall.htm');
 
-// 業種フィルター
+// 業種フィルター（選択のみ。applyFilter はGOボタン押下時）
 document.querySelectorAll('#btype-row .f-btn').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('#btype-row .f-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeFilter.btype = btn.dataset.btype || '';
     activeFilter.texts = (btn.dataset.text || '').split(',').filter(Boolean);
-    applyFilter();
   };
 });
 
-// 地方フィルター → 都道府県チップを展開
+// 地方フィルター → 都道府県チップを展開（選択のみ。applyFilter はGOボタン押下時）
 document.querySelectorAll('#region-row .f-btn').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('#region-row .f-btn').forEach(b => b.classList.remove('active'));
@@ -1045,7 +1115,8 @@ document.querySelectorAll('#region-row .f-btn').forEach(btn => {
     const reg       = btn.dataset.region;
     const prefRow   = document.getElementById('pref-row');
     const container = document.getElementById('pref-chips-container');
-    activeFilter.pref = '';
+    activeFilter.pref   = '';
+    activeFilter.region = reg === 'all' ? '' : reg;  // 地方コードを記憶
 
     if (reg === 'all') {
       prefRow.style.display = 'none';
@@ -1058,11 +1129,11 @@ document.querySelectorAll('#region-row .f-btn').forEach(btn => {
           container.querySelectorAll('.f-btn').forEach(x => x.classList.remove('active'));
           pBtn.classList.add('active');
           activeFilter.pref = pBtn.dataset.pref || '';
-          applyFilter();
+          // 県別選択もGOボタン待ち（applyFilter呼ばない）
         };
       });
     }
-    applyFilter();
+    // 地方選択もGOボタン待ち（applyFilter呼ばない）
   };
 });
 
