@@ -159,6 +159,7 @@
         <div class="f-btn" data-btype="soap" data-text="ソープ,ソープランド">ソープ</div>
         <div class="f-btn" data-btype="deli" data-text="デリヘル">デリヘル</div>
         <div class="f-btn" data-btype="hlth" data-text="ヘルス,箱ヘル">ヘルス</div>
+        <div class="f-btn" data-btype="kenkyu">研究会</div>
       </div>
       <div class="filter-row" id="region-row">
         <span class="row-label">地方</span>
@@ -446,24 +447,24 @@ function applyFilter() {
   entries.forEach(el => {
     const text = el.textContent.toLowerCase();
 
-    // 業態判定（URLコード優先 → PREF_MAP に載る地名括弧があれば店舗レポート）
+    // 業態判定
     let bHit = true;
     if (activeFilter.btype) {
       const btype = getEntryBtype(el);
-      if (btype) {
-        bHit = btype === activeFilter.btype;
+      if (activeFilter.btype === 'kenkyu') {
+        // 研究会・懇親会等：URLで業種確定 or 「店名」（地名）形式あり → 店舗系として除外
+        const hasShopBracket = /」（[^）]+）/.test(el.textContent);
+        bHit = !btype && !hasShopBracket;
       } else {
-        // URL判定不能 → 「店名」（地名） 形式で既知地名に一致する場合のみ店舗レポート
-        const m = el.textContent.match(/」（([^）]+)）/);
-        const loc = m ? m[1].trim() : null;
-        bHit = !!(loc && regionToPref(loc));
+        // 店舗系：URLで業種確定できた場合のみ一致判定（null は除外）
+        bHit = btype === activeFilter.btype;
       }
     }
 
     // 地域判定：県（pref）優先、なければ地方（region）で絞り込み
-    // 括弧なし（地域不明）は除外
+    // 研究会モードでは地域フィルター無視（懇親会等は地名なし）
     let pHit = true;
-    if (activeFilter.pref || activeFilter.region) {
+    if ((activeFilter.pref || activeFilter.region) && activeFilter.btype !== 'kenkyu') {
       const loc = extractRegion(el);
       if (!loc) {
         pHit = false;  // 括弧なし→除外
@@ -720,6 +721,18 @@ function render(html, baseUrl) {
   statusOverlay.style.display = 'none';
   contentArea.scrollTop = scrollMap.get(baseUrl) || 0; // 保存済みなら復元、初回は先頭
 
+  // history系ページ（全期間・年別）ではトップページボタンを非表示（家アイコンで代替）
+  if (/history[a-z0-9]*\.htm/i.test(baseUrl)) {
+    renderedEl.querySelectorAll('.nav-btn-group').forEach(group => {
+      const allBtns = group.querySelectorAll('a[data-nav-btn]');
+      const topBtns = Array.from(allBtns).filter(a => /pink\.htm/i.test(a.getAttribute('href') || ''));
+      if (topBtns.length > 0) {
+        if (allBtns.length === topBtns.length) group.remove();
+        else topBtns.forEach(a => a.remove());
+      }
+    });
+  }
+
   // nav-btn-group の直後に続く空ノード（&nbsp;含む）を除去して視覚的隙間を潰す
   renderedEl.querySelectorAll('.nav-btn-group').forEach(group => {
     let node = group.nextSibling;
@@ -743,6 +756,32 @@ function render(html, baseUrl) {
   const hasEntries = document.querySelectorAll('#rendered div.box1, #rendered div.box2').length > 0;
   const isHistoryAll = /historyall\.htm/i.test(baseUrl);
   document.getElementById('filter-dashboard').classList.toggle('hidden', !hasEntries && !isHistoryAll);
+
+  // トップページ（pink.htm）：今日のレポートを自動展開
+  if (/pink\.htm/i.test(baseUrl)) {
+    const todayLink = renderedEl.querySelector('a[data-nav-btn][href*="today.htm"]');
+    if (todayLink) {
+      const todayUrl = todayLink.href;
+      const hdr = document.createElement('div');
+      hdr.className = 'box3';
+      hdr.textContent = '今日のレポート（読み込み中…）';
+      renderedEl.appendChild(hdr);
+      fetchFast(todayUrl).then(html => {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = new DOMParser().parseFromString(html, 'text/html').body.innerHTML;
+        tmp.querySelectorAll('[href]').forEach(el => {
+          try { el.setAttribute('href', new URL(el.getAttribute('href'), todayUrl).href); } catch {}
+        });
+        const entries = Array.from(tmp.querySelectorAll('div.box1, div.box2'));
+        hdr.textContent = `今日のレポート（${entries.length}件）`;
+        entries.forEach(e => renderedEl.appendChild(e));
+        // フィルターを再適用してフィルター表示を更新
+        const cnt = renderedEl.querySelectorAll('div.box1, div.box2').length;
+        document.getElementById('filter-dashboard').classList.toggle('hidden', cnt === 0);
+        applyFilter();
+      }).catch(() => { hdr.textContent = '今日のレポート（取得失敗）'; });
+    }
+  }
 
   extractShopTimeline(baseUrl);
 }
@@ -841,21 +880,21 @@ async function searchHistoryAll(keyword) {
       const t = e.text.toLowerCase();
       // キーワード
       if (kw && !t.includes(kw)) return false;
-      // 業種（URLコード優先 → 判定不能なら PREF_MAP に載る地名括弧があれば店舗レポート）
+      // 業種フィルター
       if (activeFilter.btype) {
         const seg = e.href.split('/').pop().replace(/\.[^.]+$/, '').split('_').pop()?.toLowerCase();
         const btype = seg ? (BTYPE_RULES.find(r => seg.startsWith(r.p))?.b ?? null) : null;
-        if (btype) {
-          if (btype !== activeFilter.btype) return false;
+        if (activeFilter.btype === 'kenkyu') {
+          // 研究会・懇親会等：URLで業種確定 or 「店名」（地名）形式あり → 店舗系として除外
+          const hasShopBracket = /」（[^）]+）/.test(e.text);
+          if (btype || hasShopBracket) return false;
         } else {
-          // URL判定不能 → 「店名」（地名） 形式で既知地名に一致する場合のみ店舗レポート
-          const m = e.text.match(/」（([^）]+)）/);
-          const loc = m ? m[1].trim() : null;
-          if (!loc || !regionToPref(loc)) return false;
+          // 店舗系：URLで業種確定できた場合のみ一致判定（null は除外）
+          if (btype !== activeFilter.btype) return false;
         }
       }
-      // 地域（県 or 地方）— 「店名」（地名）形式のみ許可
-      if (activeFilter.pref || activeFilter.region) {
+      // 地域（県 or 地方）— 研究会モードでは地域無視
+      if ((activeFilter.pref || activeFilter.region) && activeFilter.btype !== 'kenkyu') {
         const m = e.text.match(/」（([^）]+)）/);
         const loc = m ? m[1].trim() : null;
         if (!loc) return false;  // 括弧なし→店舗レポートでないとして除外
@@ -888,6 +927,9 @@ async function searchHistoryAll(keyword) {
       });
       resCount.textContent = filtered.length;
       updateFilterSummary();
+      // 戻るボタン使用時のスクロール位置復元
+      const savedPos = scrollMap.get(currentUrl);
+      if (savedPos > 0) contentArea.scrollTop = savedPos;
       // キーワードハイライト
       if (kw.length >= 2) {
         Array.from(results.querySelectorAll('.box1')).forEach(el => {
