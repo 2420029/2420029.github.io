@@ -100,6 +100,12 @@
   .nav-item { padding: 13px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text); border-left: 3px solid transparent; transition: background 0.12s, color 0.12s; }
   .nav-item:active { background: var(--accent-dim); color: var(--accent); }
   .nav-item.active { border-left-color: var(--accent); color: var(--accent); background: var(--accent-dim); padding-left: 17px; font-weight: 600; }
+  .nav-group-header { display: flex; align-items: center; justify-content: space-between; padding: 9px 16px; font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; cursor: pointer; border-bottom: 1px solid var(--border); background: var(--bg); user-select: none; transition: background 0.12s; }
+  .nav-group-header:active { background: var(--accent-dim); }
+  .nav-group-header .toggle-icon { font-size: 13px; font-weight: 400; transition: transform 0.22s; display: inline-block; }
+  .nav-group-header.open .toggle-icon { transform: rotate(90deg); }
+  .nav-group-items { overflow: hidden; transition: max-height 0.28s ease; max-height: 0; }
+  .nav-group-items.open { max-height: 800px; }
   #sidebar-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 150; display: none; }
   #sidebar-overlay.open { display: block; }
 
@@ -159,6 +165,7 @@
         <div class="f-btn" data-btype="soap" data-text="ソープ,ソープランド">ソープ</div>
         <div class="f-btn" data-btype="deli" data-text="デリヘル">デリヘル</div>
         <div class="f-btn" data-btype="hlth" data-text="ヘルス,箱ヘル">ヘルス</div>
+        <div class="f-btn" data-btype="other">その他</div>
         <div class="f-btn" data-btype="kenkyu">研究会</div>
       </div>
       <div class="filter-row" id="region-row">
@@ -455,6 +462,10 @@ function applyFilter() {
         // 研究会・懇親会等：URLで業種確定 or 「店名」（地名）形式あり → 店舗系として除外
         const hasShopBracket = /」（[^）]+）/.test(el.textContent);
         bHit = !btype && !hasShopBracket;
+      } else if (activeFilter.btype === 'other') {
+        // その他：URL型不明 + 「店名」（地名）ブラケットあり（既知業種外の店舗）
+        const hasShopBracket = /」（[^）]+）/.test(el.textContent);
+        bHit = !btype && hasShopBracket;
       } else {
         // 店舗系：URLで業種確定できた場合のみ一致判定（null は除外）
         bHit = btype === activeFilter.btype;
@@ -752,20 +763,29 @@ function render(html, baseUrl) {
 
   applyFilter();
 
-  // box1/box2 がある、または historyall.htm のときフィルターを表示
-  const hasEntries = document.querySelectorAll('#rendered div.box1, #rendered div.box2').length > 0;
+  const isTopPage    = /pink\.htm/i.test(baseUrl);
   const isHistoryAll = /historyall\.htm/i.test(baseUrl);
-  document.getElementById('filter-dashboard').classList.toggle('hidden', !hasEntries && !isHistoryAll);
+  // フィルター表示：トップページは非表示、historyall.htm は常時表示、それ以外は box1/box2 ありで表示
+  const hasEntries = document.querySelectorAll('#rendered div.box1, #rendered div.box2').length > 0;
+  document.getElementById('filter-dashboard').classList.toggle('hidden', isTopPage || (!hasEntries && !isHistoryAll));
 
-  // トップページ（pink.htm）：今日のレポートを自動展開
-  if (/pink\.htm/i.test(baseUrl)) {
+  // トップページ（pink.htm）：「本日掲載」リンクをその場所に「今日のレポート」として展開
+  if (isTopPage) {
     const todayLink = renderedEl.querySelector('a[data-nav-btn][href*="today.htm"]');
     if (todayLink) {
-      const todayUrl = todayLink.href;
-      const hdr = document.createElement('div');
-      hdr.className = 'box3';
-      hdr.textContent = '今日のレポート（読み込み中…）';
-      renderedEl.appendChild(hdr);
+      const todayUrl   = todayLink.href;
+      const navGroup   = todayLink.closest('.nav-btn-group');
+      // プレースホルダーを nav グループの前に挿入
+      const section    = document.createElement('div');
+      section.id       = 'today-section';
+      const hdr        = document.createElement('div');
+      hdr.className    = 'box3';
+      hdr.textContent  = '今日のレポート（読み込み中…）';
+      section.appendChild(hdr);
+      if (navGroup) renderedEl.insertBefore(section, navGroup);
+      else renderedEl.prepend(section);
+      // 「本日掲載」リンクをナビから削除
+      todayLink.remove();
       fetchFast(todayUrl).then(html => {
         const tmp = document.createElement('div');
         tmp.innerHTML = new DOMParser().parseFromString(html, 'text/html').body.innerHTML;
@@ -774,11 +794,7 @@ function render(html, baseUrl) {
         });
         const entries = Array.from(tmp.querySelectorAll('div.box1, div.box2'));
         hdr.textContent = `今日のレポート（${entries.length}件）`;
-        entries.forEach(e => renderedEl.appendChild(e));
-        // フィルターを再適用してフィルター表示を更新
-        const cnt = renderedEl.querySelectorAll('div.box1, div.box2').length;
-        document.getElementById('filter-dashboard').classList.toggle('hidden', cnt === 0);
-        applyFilter();
+        entries.forEach(e => section.appendChild(e));
       }).catch(() => { hdr.textContent = '今日のレポート（取得失敗）'; });
     }
   }
@@ -802,7 +818,7 @@ function buildHistorySearchable() {
   histYearUrls = Array.from(main.querySelectorAll('a[href]'))
     .filter(a => /history[a-z0-9]+\.htm/i.test(a.href)
                  && !/historyall\.htm/i.test(a.href))
-    .map(a => a.href);
+    .map(a => ({ url: a.href, label: a.textContent.trim() || a.href.split('/').pop() }));
 
   // 空の検索結果コンテナを用意
   const results = document.createElement('div');
@@ -833,16 +849,15 @@ async function searchHistoryAll(keyword) {
       }
 
       // 全年ページを並列フェッチ
-      const htmlTexts = await Promise.allSettled(yearPages.map(url => fetchFast(url)));
+      const htmlTexts = await Promise.allSettled(yearPages.map(yu => fetchFast(yu.url)));
 
       const entries = [];
       const seen = new Set();
 
       htmlTexts.forEach((res, i) => {
         if (res.status !== 'fulfilled') return;
-        const yearUrl = yearPages[i];
-        // ベースURL（同ディレクトリ）
-        const base = yearUrl.replace(/[^/]+$/, '');
+        const yearUrl   = yearPages[i].url;
+        const yearLabel = yearPages[i].label;
 
         const tmp = document.createElement('div');
         tmp.innerHTML = res.value;
@@ -867,7 +882,7 @@ async function searchHistoryAll(keyword) {
           if (seen.has(absUrl)) return;
           seen.add(absUrl);
 
-          entries.push({ href: absUrl, text });
+          entries.push({ href: absUrl, text, year: yearLabel });
         });
       });
 
@@ -885,9 +900,13 @@ async function searchHistoryAll(keyword) {
         const seg = e.href.split('/').pop().replace(/\.[^.]+$/, '').split('_').pop()?.toLowerCase();
         const btype = seg ? (BTYPE_RULES.find(r => seg.startsWith(r.p))?.b ?? null) : null;
         if (activeFilter.btype === 'kenkyu') {
-          // 研究会・懇親会等：URLで業種確定 or 「店名」（地名）形式あり → 店舗系として除外
+          // 研究会・懇親会等：URLで業種確定 or 「店名」（地名）形式あり → 除外
           const hasShopBracket = /」（[^）]+）/.test(e.text);
           if (btype || hasShopBracket) return false;
+        } else if (activeFilter.btype === 'other') {
+          // その他：URL型不明 + 「店名」（地名）ブラケットあり
+          const hasShopBracket = /」（[^）]+）/.test(e.text);
+          if (btype || !hasShopBracket) return false;
         } else {
           // 店舗系：URLで業種確定できた場合のみ一致判定（null は除外）
           if (btype !== activeFilter.btype) return false;
@@ -916,15 +935,30 @@ async function searchHistoryAll(keyword) {
       results.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">${label ? `「${label}」に` : ''}一致するレポートは見つかりませんでした</div>`;
     } else {
       results.innerHTML = '';
+      // 年ごとにグループ化（Map は挿入順を保持するので年順になる）
+      const grouped = new Map();
       filtered.forEach(e => {
-        const box = document.createElement('div');
-        box.className = 'box1';
-        const link = document.createElement('a');
-        link.href = e.href;
-        link.textContent = e.text;
-        box.appendChild(link);
-        results.appendChild(box);
+        const y = e.year || 'その他';
+        if (!grouped.has(y)) grouped.set(y, []);
+        grouped.get(y).push(e);
       });
+
+      for (const [yearLabel, yearEntries] of grouped) {
+        const hdr = document.createElement('div');
+        hdr.className = 'box3';
+        hdr.textContent = `${yearLabel}（${yearEntries.length}件）`;
+        results.appendChild(hdr);
+        yearEntries.forEach(e => {
+          const box = document.createElement('div');
+          box.className = 'box1';
+          const link = document.createElement('a');
+          link.href = e.href;
+          link.textContent = e.text;
+          box.appendChild(link);
+          results.appendChild(box);
+        });
+      }
+
       resCount.textContent = filtered.length;
       updateFilterSummary();
       // 戻るボタン使用時のスクロール位置復元
@@ -1170,37 +1204,3 @@ document.querySelectorAll('#region-row .f-btn').forEach(btn => {
         pBtn.onclick = () => {
           container.querySelectorAll('.f-btn').forEach(x => x.classList.remove('active'));
           pBtn.classList.add('active');
-          activeFilter.pref = pBtn.dataset.pref || '';
-          // 県別選択もGOボタン待ち（applyFilter呼ばない）
-        };
-      });
-    }
-    // 地方選択もGOボタン待ち（applyFilter呼ばない）
-  };
-});
-
-// ── アーカイブメニュー生成 ───────────────────────────────────────────────
-function initArchiveMenu() {
-  const archives = {
-    'reiwa-list':       { title: '令和 (R02-R08)',   items: [['令和8年','historyr'],['令和7年','historyq'],['令和6年','historyp'],['令和5年','historyo'],['令和4年','historyn'],['令和3年','historym'],['令和2年','historyl']] },
-    'heisei-late-list': { title: '平成後期 (H21-H31)', items: [['平成31年','historyk'],['平成30年','historyj'],['平成29年','historyi'],['平成28年','historyh'],['平成27年','historyg'],['平成26年','historyf'],['平成25年','historye'],['平成24年','historyd'],['平成23年','historyc'],['平成22年','historyb'],['平成21年','historya']] },
-    'heisei-early-list':{ title: '平成前期 (H12-H20)', items: [['平成20年','history9'],['平成19年','history8'],['平成18年','history7'],['平成17年','history6'],['平成16年','history5'],['平成15年','history4'],['平成14年','history3'],['平成13年','history2'],['平成12年','history1']] },
-  };
-  for (const [id, { title, items }] of Object.entries(archives)) {
-    document.getElementById(id).innerHTML =
-      `<div class="nav-group-label">${title}</div>`
-      + items.map(([n, u]) => `<div class="nav-item" data-url="https://pinsalo.info/sp/${u}.htm">${n}</div>`).join('');
-    document.getElementById(id).querySelectorAll('.nav-item').forEach(el => {
-      el.onclick = () => loadPage(el.dataset.url);
-    });
-  }
-}
-
-// ── 起動 ─────────────────────────────────────────────────────────────────
-updateBackBtn();
-initArchiveMenu();
-lucide.createIcons();
-loadPage('https://pinsalo.info/sp/pink.htm');
-</script>
-</body>
-</html>
