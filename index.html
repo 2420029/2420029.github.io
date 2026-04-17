@@ -1204,3 +1204,58 @@ document.querySelectorAll('#region-row .f-btn').forEach(btn => {
         pBtn.onclick = () => {
           container.querySelectorAll('.f-btn').forEach(x => x.classList.remove('active'));
           pBtn.classList.add('active');
+          activeFilter.pref = pBtn.dataset.pref || '';
+          // 県別選択もGOボタン待ち（applyFilter呼ばない）
+        };
+      });
+    }
+    // 地方選択もGOボタン待ち（applyFilter呼ばない）
+  };
+});
+
+// ── アーカイブメニュー生成（折りたたみ対応）────────────────────────────
+function initArchiveMenu() {
+  const archives = [
+    { id: 'reiwa-list',        title: '令和 (R02-R08)',    defaultOpen: true,  items: [['令和8年','historyr'],['令和7年','historyq'],['令和6年','historyp'],['令和5年','historyo'],['令和4年','historyn'],['令和3年','historym'],['令和2年','historyl']] },
+    { id: 'heisei-late-list',  title: '平成後期 (H21-H31)', defaultOpen: false, items: [['平成31年','historyk'],['平成30年','historyj'],['平成29年','historyi'],['平成28年','historyh'],['平成27年','historyg'],['平成26年','historyf'],['平成25年','historye'],['平成24年','historyd'],['平成23年','historyc'],['平成22年','historyb'],['平成21年','historya']] },
+    { id: 'heisei-early-list', title: '平成前期 (H12-H20)', defaultOpen: false, items: [['平成20年','history9'],['平成19年','history8'],['平成18年','history7'],['平成17年','history6'],['平成16年','history5'],['平成15年','history4'],['平成14年','history3'],['平成13年','history2'],['平成12年','history1']] },
+  ];
+  for (const { id, title, defaultOpen, items } of archives) {
+    const container = document.getElementById(id);
+
+    // ヘッダー（クリックでトグル）
+    const hdr = document.createElement('div');
+    hdr.className = 'nav-group-header' + (defaultOpen ? ' open' : '');
+    hdr.innerHTML = `<span>${title}</span><span class="toggle-icon">›</span>`;
+
+    // アイテム群（折りたたみ対象）
+    const itemsDiv = document.createElement('div');
+    itemsDiv.className = 'nav-group-items' + (defaultOpen ? ' open' : '');
+    items.forEach(([n, u]) => {
+      const el = document.createElement('div');
+      el.className = 'nav-item';
+      el.dataset.url = `https://pinsalo.info/sp/${u}.htm`;
+      el.textContent = n;
+      el.onclick = () => loadPage(el.dataset.url);
+      itemsDiv.appendChild(el);
+    });
+
+    hdr.onclick = () => {
+      const isOpen = hdr.classList.toggle('open');
+      itemsDiv.classList.toggle('open', isOpen);
+    };
+
+    container.innerHTML = '';
+    container.appendChild(hdr);
+    container.appendChild(itemsDiv);
+  }
+}
+
+// ── 起動 ─────────────────────────────────────────────────────────────────
+updateBackBtn();
+initArchiveMenu();
+lucide.createIcons();
+loadPage('https://pinsalo.info/sp/pink.htm');
+</script>
+</body>
+</html>
