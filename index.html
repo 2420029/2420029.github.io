@@ -1451,8 +1451,17 @@ function buildShopList(baseUrl) {
   // カテゴリグループ（「組織・参加」「地域」など）を削除（地区ページでは不要）
   renderedEl.querySelectorAll('.nav-btn-group').forEach(g => g.remove());
 
-  // 地区ページのファイル名から地域名を取得（例: repo_spd.htm → '札幌'）
-  const areaLabel = NAV_LABELS[fname] || '';
+  // 地区ページの地域名を取得（例: repo_spd.htm → '札幌'）
+  // NAV_LABELS に登録されていない業種サフィックスページ（repo_sendais.htm 等）は
+  // box2 の「仙台 ソープ」テキスト先頭語からフォールバック取得する
+  let areaLabel = NAV_LABELS[fname] || '';
+  if (!areaLabel) {
+    const titleBox = document.querySelector('#rendered div.box2');
+    if (titleBox) {
+      const firstWord = titleBox.textContent.trim().split(/[\s\u3000]+/)[0];
+      if (firstWord && firstWord.length >= 2) areaLabel = firstWord;
+    }
+  }
 
   entries.forEach(el => {
     // リンクを含まないエントリはカテゴリラベル（例：「札幌デリヘル」）なのでスキップ
