@@ -68,7 +68,7 @@
 
   /* コンテンツ */
   #content-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; min-height: 0; box-shadow: inset 0 6px 8px -6px rgba(0,0,0,0.07); }
-  #rendered { padding: 12px; display: none; color: var(--text); }
+  #rendered { padding: 12px; display: none; color: var(--text); font-size: 13px; line-height: 1.8; }
   #rendered div.box1, #rendered div.box2 {
     margin: 2px 0; padding: 10px 14px;
     background: var(--surface);
@@ -91,6 +91,14 @@
   .nav-btn-group a[data-nav-btn]::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 18px; font-weight: 300; }
   .nav-btn-group a[data-nav-btn]:active { background: var(--accent-dim); color: var(--accent); }
   #rendered img { max-width: 100% !important; height: auto !important; border-radius: 6px; }
+
+  /* レポートページ本文（rpt配下）のテキスト整形 */
+  #rendered p  { margin: 0.55em 0; line-height: 1.85; font-size: 13px; }
+  #rendered h1, #rendered h2, #rendered h3,
+  #rendered h4, #rendered h5, #rendered h6 {
+    margin: 0.8em 0 0.4em; font-weight: 700; line-height: 1.5; color: var(--text);
+  }
+  #rendered hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
   /* 地区ページ：店舗エントリ */
   .shop-entry-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; cursor: pointer; }
@@ -578,6 +586,13 @@ const NAV_LABELS = {
   'history.htm':    '更新履歴',
   'historyall.htm': '全期間履歴',
   'papers.htm':     '研究論文',
+  // 研究論文サブページ
+  'pape_b.htm':     '医学・心理学',
+  'pape_d.htm':     'ぼったくり風俗',
+  'pape_a.htm':     '経営・経済学',
+  'pape_g.htm':     '業界動向調査',
+  'pape_c.htm':     '風俗関連法規',
+  'pape_h.htm':     'ノンセクション',
   'kaimuall.htm':   '会務報告',
   'ranking.php':    'ランキング',
   'bosyu.htm':      '会員募集',
@@ -605,6 +620,10 @@ const NAV_LABELS = {
   'shizuoka.htm':   '静岡',
   'tokai.htm':      '東海',
   'aichi.htm':      '愛知',
+  // 愛知のサブ地域ページ（2段構造：aichi → nagoya/owari/mikawa → 各地区）
+  'nagoya.htm':     '名古屋市内',
+  'owari.htm':      '尾張',
+  'mikawa.htm':     '三河',
   'kinki.htm':      '近畿',
   'kyoto.htm':      '京都',
   'n_osaka.htm':    '大阪北部',
@@ -801,6 +820,32 @@ const NAV_LABELS = {
   'repo_mie_e.htm':           'その他三重',
   // 愛知の地区ページ
   'repo_ngyd.htm':            '名古屋',
+  // 名古屋市内の地区（nagoya.htm 経由）
+  'repo_nishikih.htm':        '錦',
+  'repo_sakaeh.htm':          '栄',
+  'repo_shinsakaeh.htm':      '新栄',
+  'repo_meiekih.htm':         '名駅',
+  'repo_nakamuras.htm':       '中村',
+  'repo_nayabashih.htm':      '納屋橋',
+  'repo_ozoneh.htm':          '大曽根',
+  'repo_imaikep.htm':         '今池',
+  'repo_ikeshitah.htm':       '池下',
+  'repo_kanayamae.htm':       '金山',
+  'repo_atsuta.htm':          '熱田',
+  'repo_horita.htm':          '堀田',
+  'repo_shibatah.htm':        '柴田',
+  'repo_nagoyae.htm':         'その他名古屋',
+  // 尾張の地区（owari.htm 経由）
+  'repo_ichinomiyad.htm':     '一宮',
+  'repo_kasugaid.htm':        '春日井',
+  'repo_komaki.htm':          '小牧',
+  // 三河の地区（mikawa.htm 経由）
+  'repo_kariyah.htm':         '刈谷',
+  'repo_anjod.htm':           '安城',
+  'repo_okazakip.htm':        '岡崎',
+  'repo_toyohashid.htm':      '豊橋',
+  'repo_chiryu.htm':          '知立',
+  'repo_mikawae.htm':         'その他三河',
   // 京都の地区ページ
   'repo_kytd.htm':            '京都',
   'repo_kawaramachih.htm':    '河原町',
@@ -923,7 +968,7 @@ const NAV_LABELS = {
 const NAV_HOME_FNAME = 'pink.htm';
 const NAV_CATEGORY_DEFS = [
   { label: 'レポート',  fnames: ['today.htm','history.htm','historyall.htm','repo_e.htm','repo_w.htm','oversea.htm'] },
-  { label: '研究・情報', fnames: ['papers.htm','ranking.php','kaimuall.htm'] },
+  { label: '研究・情報', fnames: ['papers.htm','pape_b.htm','pape_d.htm','pape_a.htm','pape_g.htm','pape_c.htm','pape_h.htm','ranking.php','kaimuall.htm'] },
   { label: '組織・参加', fnames: ['bosyu.htm','new_mmb.htm','organ.htm'] },
   { label: '地域',      fnames: [
     'hokkai.htm','aomori.htm','iwate.htm','tohoku.htm',
@@ -931,6 +976,7 @@ const NAV_CATEGORY_DEFS = [
     'tokio_n.htm','tokio_c.htm','tokio_s.htm','tokio_w.htm',
     'kanagawa_e.htm','kanagawa_w.htm','koshinetsu.htm',
     'hokuriku.htm','shizuoka.htm','tokai.htm','aichi.htm',
+    'nagoya.htm','owari.htm','mikawa.htm',
     'kinki.htm','kyoto.htm','n_osaka.htm','s_osaka.htm','hyogo.htm',
     'chugoku.htm','shikoku.htm','kyusyu_n.htm','kyusyu_s.htm',
   ]},
@@ -957,7 +1003,7 @@ function labelFromImgSrc(img) {
 }
 
 function replaceImgButtons(doc, currentUrl = null) {
-  const navEntries = []; // { btn, fname, isYear, isMailto }
+  const navEntries = []; // { btn, fname, isYear }
   const genreTabs  = []; // { href, label } — 業種タブ
 
   doc.querySelectorAll('a').forEach(a => {
@@ -971,12 +1017,15 @@ function replaceImgButtons(doc, currentUrl = null) {
     let finalHref = href;
     let fname = '';
     let isYear = false;
-    let isMailto = false;
 
     if (href.startsWith('mailto:')) {
-      label = 'レポート投稿';
-      isMailto = true;
-      fname = 'mailto:';
+      // ビューアでは投稿機能不要のため除去
+      const mParent = a.parentNode;
+      a.remove();
+      if (mParent && mParent !== doc.body && !mParent.textContent.trim() && mParent.children.length === 0) {
+        mParent.remove();
+      }
+      return;
     } else {
       const jtpMatch = href.match(/JavaScript:TP\(['"](.+?)['"]\)/i);
       if (jtpMatch) finalHref = new URL(jtpMatch[1], 'https://pinsalo.info/sp/').href;
@@ -1012,7 +1061,7 @@ function replaceImgButtons(doc, currentUrl = null) {
     btn.setAttribute('href', finalHref);
     btn.setAttribute('data-nav-btn', '');
     btn.textContent = label;
-    navEntries.push({ btn, fname, isYear, isMailto });
+    navEntries.push({ btn, fname, isYear });
 
     // 元の <a> を除去。親が空になれば親も除去
     const parent = a.parentNode;
@@ -1029,8 +1078,10 @@ function replaceImgButtons(doc, currentUrl = null) {
 
   // ナビリンク・デコ画像除去後に残った空の構造タグ（table/tr/td等）をボトムアップで除去
   // box1/box2/box3 の内部には手を付けない
+  // br/hr 等のvoid要素はコンテンツとして保持する（レポート本文の改行を失わないため）
   (function cleanEmpty(el) {
     if (/\bbox[123]\b/.test(el.className)) return;
+    if (/^(br|hr|wbr)$/i.test(el.tagName)) return; // void要素はスキップ
     Array.from(el.children).forEach(cleanEmpty);
     if (el === doc.body) return;
     const text = (el.textContent || '').replace(/[\s\u00a0\u3000]/g, '');
@@ -1086,7 +1137,7 @@ function replaceImgButtons(doc, currentUrl = null) {
         return ai - bi;
       });
     } else if (cat.label === '組織・参加') {
-      catEntries = navEntries.filter(e => fnameSet.has(e.fname) || e.isMailto);
+      catEntries = navEntries.filter(e => fnameSet.has(e.fname));
     } else {
       catEntries = navEntries.filter(e => fnameSet.has(e.fname));
     }
@@ -1106,7 +1157,7 @@ function replaceImgButtons(doc, currentUrl = null) {
     ...NAV_CATEGORY_DEFS.flatMap(cat => cat.fnames),
   ]);
   const uncategorized = navEntries.filter(
-    e => !categorizedFnames.has(e.fname) && !e.isMailto && !e.isYear
+    e => !categorizedFnames.has(e.fname) && !e.isYear
   );
 
   let areaGroup = null;
@@ -1258,6 +1309,31 @@ function render(html, baseUrl) {
   buildShopList(baseUrl);
 
   extractShopTimeline(baseUrl);
+
+  // レポートページ：調査部補足事項の全角カンマ（，）を改行に変換
+  if (/\/rpt\d*\//i.test(baseUrl)) formatReportSupplement();
+}
+
+// ── 調査部補足事項 カンマ→改行変換 ──────────────────────────────────────────
+function formatReportSupplement() {
+  // 全テキストノードの全角カンマ（，U+FF0C）を <br> に置き換える
+  // メイン本文は 、（U+3001）を使うため誤爆しない
+  const walker = document.createTreeWalker(renderedEl, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) {
+    if (n.textContent.includes('，')) nodes.push(n);
+  }
+  nodes.forEach(textNode => {
+    const parts = textNode.textContent.split('，');
+    if (parts.length <= 1) return;
+    const frag = document.createDocumentFragment();
+    parts.forEach((part, i) => {
+      if (part) frag.appendChild(document.createTextNode(part));
+      if (i < parts.length - 1) frag.appendChild(document.createElement('br'));
+    });
+    textNode.parentNode.replaceChild(frag, textNode);
+  });
 }
 
 // ── historyall.htm 検索インデックス構築（同期・軽量版）────────────────────
@@ -1534,7 +1610,7 @@ async function toggleShopEntry(el) {
         const a = document.createElement('a');
         a.href = item.href;
         a.textContent = item.text;
-        a.addEventListener('click', e => { e.stopPropagation(); loadPage(item.href); });
+        a.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); loadPage(item.href); });
         rDiv.appendChild(a);
       });
     }
