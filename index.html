@@ -92,6 +92,14 @@
   .nav-btn-group a[data-nav-btn]:active { background: var(--accent-dim); color: var(--accent); }
   #rendered img { max-width: 100% !important; height: auto !important; border-radius: 6px; }
 
+  /* 地区ページ：店舗エントリ */
+  .shop-entry-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; cursor: pointer; }
+  .shop-entry-icon { flex-shrink: 0; font-size: 11px; color: var(--muted); transition: transform 0.25s; display: inline-block; }
+  .shop-entry-icon.open { transform: rotate(180deg); }
+  .shop-entry-reports { padding-top: 8px; margin-top: 6px; border-top: 1px solid var(--border); }
+  .shop-entry-reports div.box3 { margin: 8px 0 2px; padding: 0; }
+  .shop-entry-reports a { display: block; padding: 4px 0; font-size: 12px; color: var(--link); line-height: 1.6; }
+
   /* 店舗タイムライン */
   #shop-timeline { margin: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: none; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
   .shop-tl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -554,6 +562,340 @@ const NAV_LABELS = {
   'bosyu.htm':      '会員募集',
   'new_mmb.htm':    '人事異動',
   'organ.htm':      '会員一覧',
+  // 東日本の地域ページ
+  'hokkai.htm':     '北海道',
+  'aomori.htm':     '青森',
+  'iwate.htm':      '岩手',
+  'tohoku.htm':     '東北',
+  'tochigi.htm':    '栃木',
+  'ibaragi.htm':    '茨城',
+  'gunma.htm':      '群馬',
+  'saitama.htm':    '埼玉',
+  'chiba.htm':      '千葉',
+  'tokio_n.htm':    '東京北部',
+  'tokio_c.htm':    '東京中央',
+  'tokio_s.htm':    '東京南部',
+  'tokio_w.htm':    '東京西部',
+  'kanagawa_e.htm': '神奈川東部',
+  'kanagawa_w.htm': '神奈川西部',
+  'koshinetsu.htm': '甲信越',
+  // 西日本の地域ページ
+  'hokuriku.htm':   '北陸',
+  'shizuoka.htm':   '静岡',
+  'tokai.htm':      '東海',
+  'aichi.htm':      '愛知',
+  'kinki.htm':      '近畿',
+  'kyoto.htm':      '京都',
+  'n_osaka.htm':    '大阪北部',
+  's_osaka.htm':    '大阪南部',
+  'hyogo.htm':      '兵庫',
+  'chugoku.htm':    '中国',
+  'shikoku.htm':    '四国',
+  'kyusyu_n.htm':   '九州北部',
+  'kyusyu_s.htm':   '九州南部',
+  // 北海道の地区ページ
+  'repo_spd.htm':      '札幌',
+  'repo_asahikawa.htm':'旭川',
+  'repo_sskh.htm':     'すすきの',
+  'repo_hakodated.htm':'函館',
+  'repo_kushirod.htm': '釧路',
+  'repo_obihiro.htm':  '帯広',
+  'repo_kitami.htm':   '北見',
+  'repo_tomakomai.htm':'苫小牧',
+  'repo_chitose.htm':  '千歳',
+  'repo_muroran.htm':  '室蘭',
+  'repo_hkd_etc.htm':  'その他北海道',
+  // 東京北部の地区ページ
+  'repo_asakusa.htm':     '浅草',
+  'repo_yoshiwara.htm':   '吉原',
+  'repo_uguisudanid.htm': '鶯谷',
+  'repo_sugamop.htm':     '巣鴨',
+  'repo_otsukap.htm':     '大塚',
+  'repo_akihabarad.htm':  '秋葉原',
+  'repo_nipporid.htm':    '日暮里',
+  'repo_okachimachie.htm':'御徒町',
+  'repo_uenop.htm':       '上野',
+  'repo_kandae.htm':      '神田',
+  'repo_kamearis.htm':    '亀有',
+  'repo_akabane.htm':     '赤羽',
+  'repo_akabanep.htm':    '赤羽',
+  'repo_kitasenjup.htm':  '北千住',
+  // 東京中央の地区ページ
+  'repo_ikebukuroh.htm':      '池袋',
+  'repo_takadanobaba.htm':    '高田馬場',
+  'repo_shinjukup.htm':       '新宿',
+  'repo_shinokubod.htm':      '新大久保',
+  'repo_okuboh.htm':          '大久保',
+  'repo_nakano.htm':          '中野',
+  'repo_koenjip.htm':         '高円寺',
+  'repo_ogikubo.htm':         '荻窪',
+  'repo_kichijojip.htm':      '吉祥寺',
+  'repo_ebisu.htm':           '恵比寿',
+  'repo_shibuyah.htm':        '渋谷',
+  'repo_shinbashih.htm':      '新橋',
+  'repo_roppongi.htm':        '六本木',
+  'repo_meguro.htm':          '目黒',
+  'repo_osaki.htm':           '大崎',
+  'repo_gotanda.htm':         '五反田',
+  'repo_kinshichod.htm':      '錦糸町',
+  'repo_kasaid.htm':          '葛西',
+  'repo_koiwah.htm':          '小岩',
+  'repo_shinkoiwap.htm':      '新小岩',
+  'repo_tokioc_e.htm':        'その他東京中央',
+  // 東京南部の地区ページ
+  'repo_shinagawad.htm':      '品川',
+  'repo_kamatap.htm':         '蒲田',
+  'repo_horinouchi.htm':      '堀之内',
+  'repo_itabashi.htm':        '板橋',
+  'repo_nerima.htm':          '練馬',
+  'repo_tokios_e.htm':        'その他東京南部',
+  // 東京西部の地区ページ
+  'repo_hachiojip.htm':       '八王子',
+  'repo_tachikawad.htm':      '立川',
+  'repo_fussa.htm':           '福生',
+  'repo_fuchu.htm':           '府中',
+  'repo_kokubunjip.htm':      '国分寺',
+  'repo_minamityo.htm':       '南町',
+  'repo_tokiow_e.htm':        'その他東京西部',
+  // 神奈川東部の地区ページ
+  'repo_kawasakip.htm':       '川崎',
+  'repo_tsurumi.htm':         '鶴見',
+  'repo_sakuragicho.htm':     '桜木町',
+  'repo_yokohamae.htm':       '横浜東',
+  'repo_shinyokohama.htm':    '新横浜',
+  'repo_ykhd.htm':            '横浜',
+  'repo_kanagawae_e.htm':     'その他神奈川東部',
+  // 神奈川西部の地区ページ
+  'repo_yokohamaw.htm':       '横浜西',
+  'repo_yokosuka.htm':        '横須賀',
+  'repo_hiratsukap.htm':      '平塚',
+  'repo_fujisawap.htm':       '藤沢',
+  'repo_sagamiharap.htm':     '相模原',
+  'repo_odasagap.htm':        '小田急相模原',
+  'repo_odawarap.htm':        '小田原',
+  'repo_honatsugip.htm':      '本厚木',
+  'repo_hadano.htm':          '秦野',
+  'repo_kanagawaw_e.htm':     'その他神奈川西部',
+  // 青森の地区ページ
+  'repo_aomori.htm':          '青森',
+  'repo_hirosaki.htm':        '弘前',
+  'repo_hachinohed.htm':      '八戸',
+  'repo_aomori_e.htm':        'その他青森',
+  // 岩手の地区ページ
+  'repo_moriokad.htm':        '盛岡',
+  'repo_ichinoseki.htm':      '一関',
+  'repo_kitakami.htm':        '北上',
+  'repo_mizusawa.htm':        '水沢',
+  'repo_sanriku.htm':         '三陸',
+  // 東北の地区ページ（宮城・福島・山形・秋田）
+  'repo_sendaid.htm':         '仙台',
+  'repo_ishinomaki.htm':      '石巻',
+  'repo_miyagi_e.htm':        'その他宮城',
+  'repo_fukushima.htm':       '福島',
+  'repo_koriyama.htm':        '郡山',
+  'repo_iwaki.htm':           'いわき',
+  'repo_aizuwakamatsu.htm':   '会津若松',
+  'repo_onahama.htm':         '小名浜',
+  'repo_yamagata.htm':        '山形',
+  'repo_akita.htm':           '秋田',
+  'repo_yokote.htm':          '横手',
+  // 茨城の地区ページ
+  'repo_mitos.htm':           '水戸',
+  'repo_tsuchiurah.htm':      '土浦',
+  'repo_tsukuba.htm':         'つくば',
+  'repo_hitachi.htm':         '日立',
+  'repo_kamisu.htm':          '神栖',
+  'repo_kisarazu.htm':        '木更津',
+  'repo_ibaragi_e.htm':       'その他茨城',
+  // 栃木の地区ページ
+  'repo_utsunomiyad.htm':     '宇都宮',
+  'repo_ashikaga.htm':        '足利',
+  'repo_oyama.htm':           '小山',
+  // 群馬の地区ページ
+  'repo_maebashie.htm':       '前橋',
+  'repo_takasakid.htm':       '高崎',
+  'repo_isesakid.htm':        '伊勢崎',
+  'repo_gunma_e.htm':         'その他群馬',
+  // 埼玉の地区ページ
+  'repo_omiya.htm':           '大宮',
+  'repo_kawagoed.htm':        '川越',
+  'repo_kasukabe.htm':        '春日部',
+  'repo_koshigayad.htm':      '越谷',
+  'repo_tokorozawad.htm':     '所沢',
+  'repo_kumagayad.htm':       '熊谷',
+  'repo_kuki.htm':            '久喜',
+  'repo_honjo.htm':           '本庄',
+  'repo_nishikawaguchi.htm':  '西川口',
+  'repo_warabie.htm':         '蕨',
+  'repo_stdd.htm':            '埼玉',
+  'repo_saitama_e.htm':       'その他埼玉',
+  // 千葉の地区ページ
+  'repo_funabashid.htm':      '船橋',
+  'repo_matsudod.htm':        '松戸',
+  'repo_kashiwad.htm':        '柏',
+  'repo_ichikawa.htm':        '市川',
+  'repo_nishifunabashid.htm': '西船橋',
+  'repo_tsudanumap.htm':      '津田沼',
+  'repo_naritad.htm':         '成田',
+  'repo_ichihara.htm':        '市原',
+  'repo_chbd.htm':            '千葉',
+  'repo_chiba_e.htm':         'その他千葉',
+  // 甲信越の地区ページ
+  'repo_kofus.htm':           '甲府',
+  'repo_naganod.htm':         '長野',
+  'repo_matsumotod.htm':      '松本',
+  'repo_uedad.htm':           '上田',
+  'repo_nagaokad.htm':        '長岡',
+  'repo_nigatas.htm':         '新潟',
+  'repo_sanjo.htm':           '三条',
+  'repo_yamanashi_e.htm':     'その他山梨',
+  'repo_nagano_e.htm':        'その他長野',
+  'repo_nigata_e.htm':        'その他新潟',
+  // 北陸の地区ページ
+  'repo_kanazawad.htm':       '金沢',
+  'repo_kanaduen.htm':        '金津園',
+  'repo_kaga.htm':            '加賀',
+  'repo_fukuid.htm':          '福井',
+  'repo_takaoka.htm':         '高岡',
+  'repo_toyamad.htm':         '富山',
+  'repo_toyama_e.htm':        'その他富山',
+  'repo_ishikawa.htm':        '石川',
+  // 静岡の地区ページ
+  'repo_shizuokad.htm':       '静岡',
+  'repo_hamamatsud.htm':      '浜松',
+  'repo_mishima.htm':         '三島',
+  'repo_numadud.htm':         '沼津',
+  'repo_gotenba.htm':         '御殿場',
+  'repo_fujid.htm':           '富士',
+  'repo_atami.htm':           '熱海',
+  'repo_shizuoka_e.htm':      'その他静岡',
+  // 東海の地区ページ（三重・岐阜）
+  'repo_gifu.htm':            '岐阜',
+  'repo_ogakid.htm':          '大垣',
+  'repo_gifu_e.htm':          'その他岐阜',
+  'repo_tsud.htm':            '津',
+  'repo_yokkaichid.htm':      '四日市',
+  'repo_suzukad.htm':         '鈴鹿',
+  'repo_matsusakap.htm':      '松阪',
+  'repo_mie_e.htm':           'その他三重',
+  // 愛知の地区ページ
+  'repo_ngyd.htm':            '名古屋',
+  // 京都の地区ページ
+  'repo_kytd.htm':            '京都',
+  'repo_kawaramachih.htm':    '河原町',
+  'repo_kiyamachih.htm':      '木屋町',
+  'repo_gionh.htm':           '祇園',
+  'repo_maiduru.htm':         '舞鶴',
+  'repo_kyoto_e.htm':         'その他京都',
+  // 大阪北部の地区ページ
+  'repo_umedah.htm':          '梅田',
+  'repo_shinosaka.htm':       '新大阪',
+  'repo_nanbah.htm':          '難波',
+  'repo_nipponbashih.htm':    '日本橋',
+  'repo_nishinakajimah.htm':  '西中島',
+  'repo_jusoh.htm':           '十三',
+  'repo_sakaecho.htm':        '栄町',
+  'repo_kyobaship.htm':       '京橋',
+  'repo_tanimachih.htm':      '谷町',
+  'repo_tennojih.htm':        '天王寺',
+  'repo_oskd.htm':            '大阪',
+  'repo_nosaka_e.htm':        'その他大阪北部',
+  // 大阪南部の地区ページ
+  'repo_sakai.htm':           '堺',
+  'repo_sakaihigashih.htm':   '堺東',
+  'repo_sennan.htm':          '泉南',
+  'repo_senpoku.htm':         '泉北',
+  'repo_sosaka_e.htm':        'その他大阪南部',
+  // 兵庫の地区ページ
+  'repo_kobd.htm':            '神戸',
+  'repo_sannomiyah.htm':      '三宮',
+  'repo_fukuharas.htm':       '福原',
+  'repo_akashi.htm':          '明石',
+  'repo_kakogawa.htm':        '加古川',
+  'repo_himejid.htm':         '姫路',
+  'repo_hyogo_e.htm':         'その他兵庫',
+  // 近畿その他の地区ページ
+  'repo_otsu.htm':            '大津',
+  'repo_konan.htm':           '湖南',
+  'repo_koto.htm':            '湖東',
+  'repo_ogoto.htm':           '雄琴',
+  'repo_narad.htm':           '奈良',
+  'repo_nara_e.htm':          'その他奈良',
+  'repo_wakayamad.htm':       '和歌山',
+  'repo_wakayama_e.htm':      'その他和歌山',
+  'repo_mnminter.htm':        '南インター',
+  // 中国の地区ページ
+  'repo_hiroshimas.htm':      '広島',
+  'repo_hrsd.htm':            '広島(D)',
+  'repo_hiroshima_e.htm':     'その他広島',
+  'repo_fukuyamad.htm':       '福山',
+  'repo_kurashikid.htm':      '倉敷',
+  'repo_okayamap.htm':        '岡山',
+  'repo_okyd.htm':            '岡山(D)',
+  'repo_okayama_e.htm':       'その他岡山',
+  'repo_matsued.htm':         '松江',
+  'repo_yonagos.htm':         '米子',
+  'repo_totori.htm':          '鳥取',
+  'repo_shimonosekis.htm':    '下関',
+  'repo_yamaguchi.htm':       '山口',
+  'repo_yamaguchi_e.htm':     'その他山口',
+  'repo_ube.htm':             '宇部',
+  'repo_syunan.htm':          '周南',
+  'repo_sanin.htm':           '山陰',
+  // 四国の地区ページ
+  'repo_takamatsus.htm':      '高松',
+  'repo_kagawa.htm':          '香川',
+  'repo_matsuyamad.htm':      '松山',
+  'repo_dogoh.htm':           '道後',
+  'repo_ehime.htm':           '愛媛',
+  'repo_kochis.htm':          '高知',
+  'repo_kochi_e.htm':         'その他高知',
+  'repo_tokushimah.htm':      '徳島',
+  'repo_toyo.htm':            '東予',
+  // 九州北部の地区ページ
+  'repo_fukuoka.htm':         '福岡',
+  'repo_fkod.htm':            '福岡(D)',
+  'repo_fukuoka_e.htm':       'その他福岡',
+  'repo_tenjin.htm':          '天神',
+  'repo_nakasuh.htm':         '中洲',
+  'repo_fukutomityos.htm':    '福富町',
+  'repo_kitakyusyu.htm':      '北九州',
+  'repo_kokura.htm':          '小倉',
+  'repo_kurosaki.htm':        '黒崎',
+  'repo_kykd.htm':            '九州',
+  'repo_zasyonokuma.htm':     '雑餉隈',
+  'repo_kurumed.htm':         '久留米',
+  'repo_sasebo.htm':          '佐世保',
+  'repo_nagasakid.htm':       '長崎',
+  'repo_nagasaki_e.htm':      'その他長崎',
+  'repo_saga.htm':            '佐賀',
+  'repo_saga_e.htm':          'その他佐賀',
+  'repo_ureshino.htm':        '嬉野',
+  'repo_takeo.htm':           '武雄',
+  // 九州南部の地区ページ
+  'repo_kumamoto.htm':        '熊本',
+  'repo_miyazakid.htm':       '宮崎',
+  'repo_miyazaki_e.htm':      'その他宮崎',
+  'repo_miyakonojo.htm':      '都城',
+  'repo_nobeoka.htm':         '延岡',
+  'repo_kirishima.htm':       '霧島',
+  'repo_kagoshimad.htm':      '鹿児島',
+  'repo_kagoshimae.htm':      'その他鹿児島',
+  'repo_oitad.htm':           '大分',
+  'repo_beppus.htm':          '別府',
+  'repo_nahas.htm':           '那覇',
+  'repo_okinawae.htm':        'その他沖縄',
+  'repo_sueyoshityo.htm':     '末吉町',
+  'repo_akebonotyoh.htm':     '曙町',
+  // 東北その他
+  'repo_nasushiobara.htm':    '那須塩原',
+  'repo_koga.htm':            '古河',
+  'repo_syonai.htm':          '庄内',
+  // 漏れ補完
+  'repo_amagasakie.htm':      '尼崎',
+  'repo_machida.htm':         '町田',
+  'repo_otad.htm':            '太田',
+  'repo_yamatop.htm':         '大和',
 };
 
 // ナビメニュー カテゴリ定義（Option A）
@@ -562,6 +904,15 @@ const NAV_CATEGORY_DEFS = [
   { label: 'レポート',  fnames: ['today.htm','history.htm','historyall.htm','repo_e.htm','repo_w.htm','oversea.htm'] },
   { label: '研究・情報', fnames: ['papers.htm','ranking.php','kaimuall.htm'] },
   { label: '組織・参加', fnames: ['bosyu.htm','new_mmb.htm','organ.htm'] },
+  { label: '地域',      fnames: [
+    'hokkai.htm','aomori.htm','iwate.htm','tohoku.htm',
+    'tochigi.htm','ibaragi.htm','gunma.htm','saitama.htm','chiba.htm',
+    'tokio_n.htm','tokio_c.htm','tokio_s.htm','tokio_w.htm',
+    'kanagawa_e.htm','kanagawa_w.htm','koshinetsu.htm',
+    'hokuriku.htm','shizuoka.htm','tokai.htm','aichi.htm',
+    'kinki.htm','kyoto.htm','n_osaka.htm','s_osaka.htm','hyogo.htm',
+    'chugoku.htm','shikoku.htm','kyusyu_n.htm','kyusyu_s.htm',
+  ]},
 ];
 
 // imgファイル名から年号ラベルを導出（R08.png→令和8年、h31.png→平成31年）
@@ -686,7 +1037,27 @@ function replaceImgButtons(doc) {
     hasCatBtns = true;
   });
 
-  if (hasCatBtns) {
+  // ③ カテゴリ未分類のボタン（地区ページなど）を「地区」グループとして収集
+  const categorizedFnames = new Set([
+    NAV_HOME_FNAME,
+    ...NAV_CATEGORY_DEFS.flatMap(cat => cat.fnames),
+  ]);
+  const uncategorized = navEntries.filter(
+    e => !categorizedFnames.has(e.fname) && !e.isMailto && !e.isYear
+  );
+
+  let areaGroup = null;
+  if (uncategorized.length > 0) {
+    areaGroup = doc.createElement('div');
+    areaGroup.className = 'nav-btn-group';
+    const areaHeader = doc.createElement('div');
+    areaHeader.className = 'nav-category-header';
+    areaHeader.textContent = '地区';
+    areaGroup.appendChild(areaHeader);
+    uncategorized.forEach(e => areaGroup.appendChild(e.btn));
+  }
+
+  if (hasCatBtns || areaGroup) {
     // ホームグループの直後から実コンテンツが始まるまでの空ノードを除去
     // （&nbsp;・空テキスト・リンクも画像も持たない空要素が対象）
     const isEmptyNode = n => {
@@ -708,12 +1079,15 @@ function replaceImgButtons(doc) {
       if (child !== homeGroup) bodyText += (child.textContent || '').replace(/[\s\u00a0]/g, '');
     }
     if (bodyText.length > 10) {
-      // コンテンツあり → カテゴリは末尾
-      doc.body.appendChild(catGroup);
+      // コンテンツあり → カテゴリ・地区グループは末尾
+      if (areaGroup) doc.body.appendChild(areaGroup);
+      if (hasCatBtns) doc.body.appendChild(catGroup);
     } else {
       // コンテンツなし → ホームの直後に連結（隙間ゼロ）
+      // 地区グループを先に、その後カテゴリグループ
       const insertBefore = homeGroup ? homeGroup.nextSibling : null;
-      doc.body.insertBefore(catGroup, insertBefore);
+      if (areaGroup) doc.body.insertBefore(areaGroup, insertBefore);
+      if (hasCatBtns) doc.body.insertBefore(catGroup, areaGroup ? areaGroup.nextSibling : insertBefore);
     }
   }
 }
@@ -782,9 +1156,10 @@ function render(html, baseUrl) {
 
   const isTopPage    = /pink\.htm/i.test(baseUrl);
   const isHistoryAll = /historyall\.htm/i.test(baseUrl);
-  // フィルター表示：トップページは非表示、historyall.htm は常時表示、それ以外は box1/box2 ありで表示
+  const isNoFilterPages = /\/(organ|new_mmb|bosyu)\.htm/i.test(baseUrl);
+  // フィルター表示：トップページ・会員一覧・人事異動・会員募集は非表示、historyall.htm は常時表示、それ以外は box1/box2 ありで表示
   const hasEntries = document.querySelectorAll('#rendered div.box1, #rendered div.box2').length > 0;
-  document.getElementById('filter-dashboard').classList.toggle('hidden', isTopPage || (!hasEntries && !isHistoryAll));
+  document.getElementById('filter-dashboard').classList.toggle('hidden', isTopPage || isNoFilterPages || (!hasEntries && !isHistoryAll));
 
   // トップページ（pink.htm）：「本日掲載」リンクをその場所に「今日のレポート」として展開
   if (isTopPage) {
@@ -815,6 +1190,9 @@ function render(html, baseUrl) {
       }).catch(() => { hdr.textContent = '今日のレポート（取得失敗）'; });
     }
   }
+
+  // 地区ページの店舗リスト変換（applyFilter の後で実行）
+  buildShopList(baseUrl);
 
   extractShopTimeline(baseUrl);
 }
@@ -992,6 +1370,169 @@ async function searchHistoryAll(keyword) {
   } catch (err) {
     results.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">取得エラー: ${err.message}</div>`;
   }
+}
+
+// ── 地区ページ：店舗リスト変換 ───────────────────────────────────────────────
+const REGION_NAV_PAGES = new Set(['repo_e.htm','repo_w.htm']);
+
+function buildShopList(baseUrl) {
+  const fname = baseUrl.split('/').pop().split('?')[0];
+  if (!fname.startsWith('repo_') || REGION_NAV_PAGES.has(fname)) return;
+
+  const entries = Array.from(document.querySelectorAll('#rendered div.box1, #rendered div.box2'));
+  if (entries.length === 0) return;
+
+  // フィルターダッシュボードを非表示（地区ページではフィルター不要）
+  document.getElementById('filter-dashboard').classList.add('hidden');
+
+  // カテゴリグループ（「組織・参加」「地域」など）を削除（地区ページでは不要）
+  renderedEl.querySelectorAll('.nav-btn-group').forEach(g => g.remove());
+
+  // 地区ページのファイル名から地域名を取得（例: repo_spd.htm → '札幌'）
+  const areaLabel = NAV_LABELS[fname] || '';
+
+  entries.forEach(el => {
+    // リンクを含まないエントリはカテゴリラベル（例：「札幌デリヘル」）なのでスキップ
+    if (!el.querySelector('a[href]')) return;
+
+    // 店名抽出：リンクテキスト内の「「店名」」パターンを最優先
+    const shopName = (() => {
+      for (const link of el.querySelectorAll('a[href]')) {
+        const m = link.textContent.match(/「([^」]+)」/);
+        if (m && m[1].length >= 2) return m[1];
+      }
+      // 次点：最初のテキストノード（aタグ外）
+      for (const node of el.childNodes) {
+        if (node.nodeType === 3) {
+          const t = node.textContent.replace(/[\s\u00a0]+/g, ' ').trim();
+          if (t.length >= 2) return t;
+        }
+      }
+      // フォールバック：テキスト全体の先頭40文字
+      return el.textContent.replace(/\s+/g, ' ').trim().slice(0, 40);
+    })();
+
+    el.dataset.shopName = shopName;
+    el.dataset.areaLabel = areaLabel;
+    el.innerHTML =
+      `<div class="shop-entry-name">${shopName}<span class="shop-entry-icon">▼</span></div>` +
+      `<div class="shop-entry-reports" style="display:none"></div>`;
+
+    el.querySelector('.shop-entry-name').addEventListener('click', () => toggleShopEntry(el));
+  });
+}
+
+async function toggleShopEntry(el) {
+  const rDiv = el.querySelector('.shop-entry-reports');
+  const icon = el.querySelector('.shop-entry-icon');
+
+  // 開閉トグル
+  if (rDiv.style.display !== 'none') {
+    rDiv.style.display = 'none';
+    icon.classList.remove('open');
+    return;
+  }
+
+  icon.classList.add('open');
+  rDiv.innerHTML = '<div style="padding:6px 0;font-size:12px;color:var(--muted)">検索中…</div>';
+  rDiv.style.display = '';
+
+  try {
+    const results = await fetchShopReports(el.dataset.shopName, el.dataset.areaLabel);
+    rDiv.innerHTML = '';
+
+    if (results.length === 0) {
+      rDiv.innerHTML = '<div style="padding:6px 0;font-size:12px;color:var(--muted)">レポートが見つかりませんでした</div>';
+      return;
+    }
+
+    // 年ごとにグループ化
+    const grouped = new Map();
+    results.forEach(r => {
+      if (!grouped.has(r.year)) grouped.set(r.year, []);
+      grouped.get(r.year).push(r);
+    });
+
+    for (const [year, items] of grouped) {
+      const hdr = document.createElement('div');
+      hdr.className = 'box3';
+      hdr.textContent = `${year}（${items.length}件）`;
+      rDiv.appendChild(hdr);
+      items.forEach(item => {
+        const a = document.createElement('a');
+        a.href = item.href;
+        a.textContent = item.text;
+        a.addEventListener('click', e => { e.stopPropagation(); loadPage(item.href); });
+        rDiv.appendChild(a);
+      });
+    }
+    resCount.textContent = results.length;
+  } catch(err) {
+    rDiv.innerHTML = `<div style="padding:6px 0;font-size:12px;color:var(--muted)">エラー: ${err.message}</div>`;
+  }
+}
+
+async function fetchShopReports(shopName, areaLabel) {
+  // histIndexCache がなければ historyall.htm の各年ページから構築
+  // （searchHistoryAll と共有のキャッシュを利用）
+  if (!histIndexCache) {
+    const masterHtml = await fetchFast('https://pinsalo.info/sp/historyall.htm');
+    const masterDoc  = new DOMParser().parseFromString(masterHtml, 'text/html');
+
+    histYearUrls = Array.from(masterDoc.querySelectorAll('a[href]'))
+      .filter(a => {
+        const h = a.getAttribute('href') || '';
+        return /history[a-z0-9]+\.htm/i.test(h) && !/historyall\.htm/i.test(h);
+      })
+      .map(a => {
+        // 画像ボタンの場合は labelFromImgSrc で年ラベルを取得
+        const imgEl = a.querySelector('img');
+        const yearLabel = imgEl ? labelFromImgSrc(imgEl) : '';
+        return {
+          url:   new URL(a.getAttribute('href'), 'https://pinsalo.info/sp/').href,
+          label: yearLabel || a.textContent.trim() || a.getAttribute('href').split('/').pop().replace('.htm','').toUpperCase(),
+        };
+      });
+
+    const pages = await Promise.allSettled(histYearUrls.map(y => fetchFast(y.url)));
+    const entries = [];
+    const seen    = new Set();
+
+    pages.forEach((res, i) => {
+      if (res.status !== 'fulfilled') return;
+      const yUrl   = histYearUrls[i].url;
+      const yLabel = histYearUrls[i].label;
+      const tmp    = document.createElement('div');
+      tmp.innerHTML = res.value;
+
+      tmp.querySelectorAll('a[href]').forEach(a => {
+        const raw = a.getAttribute('href') || '';
+        if (!raw || /^#|^javascript/i.test(raw)) return;
+        let absUrl;
+        try { absUrl = new URL(raw, yUrl).href; } catch { return; }
+        if (/history[a-z0-9]*\.htm/i.test(absUrl)) return;
+        if (!/\.html?($|\?)/i.test(absUrl)) return;
+        const text = a.textContent.trim();
+        if (text.length < 6) return;
+        if (seen.has(absUrl)) return;
+        seen.add(absUrl);
+        entries.push({ href: absUrl, text, year: yLabel });
+      });
+    });
+
+    histIndexCache = entries;
+  }
+
+  // 店名 AND 地域でフィルタリング
+  const kw   = shopName.toLowerCase();
+  const area = areaLabel.toLowerCase();
+  return histIndexCache.filter(e => {
+    const t = e.text.toLowerCase();
+    if (kw.length < 2 || !t.includes(kw)) return false;
+    // 地域名が取得できている場合はさらに絞り込む
+    if (area) return t.includes(area);
+    return true;
+  });
 }
 
 // ── 店舗タイムライン（案1: 店名テキスト ＋ 案2: URLディレクトリ）──────────
