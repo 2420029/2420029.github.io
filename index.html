@@ -111,6 +111,27 @@
   .shop-tl-link.current { opacity: 0.4; pointer-events: none; cursor: default; }
   #rendered mark { background: #fef08a; color: #0f172a; border-radius: 2px; padding: 0 1px; }
 
+  /* 業種タブバー（地区詳細ページ上部） */
+  .genre-tabs {
+    display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    padding: 10px 14px 8px; gap: 7px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  .genre-tabs::-webkit-scrollbar { display: none; }
+  .genre-tab {
+    flex: 0 0 auto; display: inline-block; padding: 6px 18px;
+    border-radius: 20px; border: 1.5px solid var(--border-strong);
+    font-size: 12px; font-weight: 500; color: var(--muted);
+    background: var(--bg); text-decoration: none; white-space: nowrap;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .genre-tab.active {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff !important; font-weight: 700; pointer-events: none;
+  }
+  .genre-tab:not(.active):active { opacity: 0.65; }
+
   /* サイドバー */
   #sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--surface); z-index: 200; transition: transform 0.3s; border-right: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.12); }
   #sidebar.open { transform: translateX(280px); }
@@ -915,6 +936,16 @@ const NAV_CATEGORY_DEFS = [
   ]},
 ];
 
+// 業種タブ：img ファイル名 → 業種ラベル（derh.png → デリヘル など）
+const GENRE_IMG_MAP = {
+  'derh.png':  'デリヘル',
+  'soap.png':  'ソープ',
+  'helt.png':  'ヘルス',
+  'psalo.png': 'ピンサロ',
+  'cab.png':   'キャバ',
+  'etc.png':   'その他',
+};
+
 // imgファイル名から年号ラベルを導出（R08.png→令和8年、h31.png→平成31年）
 function labelFromImgSrc(img) {
   const fname = (img.getAttribute('src') || '').split('/').pop();
@@ -925,8 +956,9 @@ function labelFromImgSrc(img) {
   return '';
 }
 
-function replaceImgButtons(doc) {
+function replaceImgButtons(doc, currentUrl = null) {
   const navEntries = []; // { btn, fname, isYear, isMailto }
+  const genreTabs  = []; // { href, label } — 業種タブ
 
   doc.querySelectorAll('a').forEach(a => {
     // テキストノードが実質空で img を含むリンクだけ対象
@@ -949,6 +981,19 @@ function replaceImgButtons(doc) {
       const jtpMatch = href.match(/JavaScript:TP\(['"](.+?)['"]\)/i);
       if (jtpMatch) finalHref = new URL(jtpMatch[1], 'https://pinsalo.info/sp/').href;
       fname = finalHref.split('/').pop().split('?')[0];
+
+      // 業種タブ判定（img ファイル名で識別）
+      const imgFname = (img.getAttribute('src') || '').split('/').pop();
+      if (GENRE_IMG_MAP[imgFname]) {
+        genreTabs.push({ href: finalHref, label: GENRE_IMG_MAP[imgFname] });
+        const gParent = a.parentNode;
+        a.remove();
+        if (gParent && gParent !== doc.body && !gParent.textContent.trim() && gParent.children.length === 0) {
+          gParent.remove();
+        }
+        return;
+      }
+
       const yearLabel = labelFromImgSrc(img);
       if (NAV_LABELS[fname]) {
         label = NAV_LABELS[fname];
@@ -994,7 +1039,7 @@ function replaceImgButtons(doc) {
     }
   })(doc.body);
 
-  if (navEntries.length === 0) return;
+  if (navEntries.length === 0 && genreTabs.length === 0) return;
 
   // ① ホームボタンを body 先頭に単独挿入
   const homeEntry = navEntries.find(e => e.fname === NAV_HOME_FNAME);
@@ -1004,6 +1049,24 @@ function replaceImgButtons(doc) {
     homeGroup.className = 'nav-btn-group';
     homeGroup.appendChild(homeEntry.btn);
     doc.body.insertBefore(homeGroup, doc.body.firstChild);
+  }
+
+  // ① ' 業種タブストリップをホームの直後に挿入（地区ページのジャンルナビ）
+  if (genreTabs.length > 0) {
+    const currentFname = (currentUrl || '').split('/').pop().split('?')[0].toLowerCase();
+    const tabStrip = doc.createElement('div');
+    tabStrip.className = 'genre-tabs';
+    genreTabs.forEach(({ href, label }) => {
+      const tabFname = href.split('/').pop().split('?')[0].toLowerCase();
+      const tab = doc.createElement('a');
+      tab.setAttribute('href', href);
+      tab.setAttribute('data-nav-btn', '');
+      tab.className = 'genre-tab' + (tabFname === currentFname ? ' active' : '');
+      tab.textContent = label;
+      tabStrip.appendChild(tab);
+    });
+    const afterHome = homeGroup ? homeGroup.nextSibling : doc.body.firstChild;
+    doc.body.insertBefore(tabStrip, afterHome);
   }
 
   // ② カテゴリナビを構築
@@ -1117,8 +1180,8 @@ function render(html, baseUrl) {
   doc.querySelectorAll('[bgcolor]').forEach(el => el.removeAttribute('bgcolor'));
   doc.querySelectorAll('[color="#000000"],[color="#000"],[color="black"]').forEach(el => el.removeAttribute('color'));
 
-  // 画像ボタン → テキストボタン置換
-  replaceImgButtons(doc);
+  // 画像ボタン → テキストボタン置換（currentUrl を渡して業種タブのアクティブ判定に使用）
+  replaceImgButtons(doc, baseUrl);
 
   renderedEl.innerHTML = doc.body?.innerHTML ?? '';
   renderedEl.style.display = 'block';
