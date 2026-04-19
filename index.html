@@ -170,6 +170,29 @@
   /* ジャンルタブの店舗件数バッジ */
   .genre-shop-count { flex: 0 0 auto; font-size: 11px; color: var(--muted); padding: 6px 4px 6px 2px; align-self: center; margin-left: auto; white-space: nowrap; }
 
+  /* ヘッダータイトル：タップ可能 */
+  .header-title { cursor: pointer; }
+  .header-title:active { opacity: 0.7; }
+
+  /* 地方アコーディオン（東日本/西日本） */
+  .region-accordion { background: var(--surface); border-bottom: 1px solid var(--border); }
+  .region-accordion-toggle { display: flex; align-items: center; padding: 13px 18px; font-size: var(--content-fs); font-weight: 500; color: var(--text); cursor: pointer; transition: background 0.12s; border-top: 1px solid var(--border); }
+  .region-accordion-toggle::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 18px; font-weight: 300; transition: transform 0.25s; display: inline-block; }
+  .region-accordion-toggle.open::after { transform: rotate(90deg); }
+  .region-accordion-toggle:active { background: var(--accent-dim); color: var(--accent); }
+  .region-accordion-body { overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+  .region-accordion-body.open { max-height: 2000px; }
+  .region-group-item { display: flex; align-items: center; padding: 11px 18px 11px 30px; border-top: 1px solid var(--border); font-size: var(--content-fs); color: var(--text); cursor: pointer; transition: background 0.12s; background: var(--surface); }
+  .region-group-item::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 16px; font-weight: 300; }
+  .region-group-item.has-children::after { content: '▼'; font-size: 10px; transition: transform 0.22s; display: inline-block; }
+  .region-group-item.has-children.open::after { transform: rotate(180deg); }
+  .region-group-item:active { background: var(--accent-dim); color: var(--accent); }
+  .region-sub-body { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+  .region-sub-body.open { max-height: 500px; }
+  .region-sub-item { display: flex; align-items: center; padding: 10px 18px 10px 44px; border-top: 1px solid var(--border); font-size: var(--content-fs); color: var(--link); cursor: pointer; background: var(--bg); transition: background 0.12s; }
+  .region-sub-item::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 14px; font-weight: 300; }
+  .region-sub-item:active { background: var(--accent-dim); }
+
   /* ステータスオーバーレイ */
   #status-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); z-index: 50; }
   .spinner { width: 28px; height: 28px; border: 2px solid var(--border-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -557,7 +580,8 @@ function applyFilter() {
 
   // 年ラベル (box3) は常に表示
   document.querySelectorAll('#rendered div.box3').forEach(el => el.style.display = '');
-  document.getElementById('filter-toggle-label').textContent = `フィルター (${count}件)`;
+  const hasFilter = activeFilter.btype || activeFilter.pref || activeFilter.region || activeFilter.keyword;
+  document.getElementById('filter-toggle-label').textContent = hasFilter ? `フィルター (${count}件)` : 'フィルター';
   updateFilterSummary();
 
   // キーワードハイライト（2文字以上・表示中エントリのみ）
@@ -972,6 +996,49 @@ const NAV_LABELS = {
   'repo_yamatop.htm':         '大和',
 };
 
+// 地方アコーディオン定義（東日本/西日本）
+const REGION_GROUPS = {
+  'repo_e.htm': { label: '東日本', groups: [
+    { label: '北海道',           href: 'hokkai.htm' },
+    { label: '東北',             href: 'tohoku.htm' },
+    { label: '北関東',           children: [
+      { label: '茨城', href: 'ibaragi.htm' },
+      { label: '栃木', href: 'tochigi.htm' },
+      { label: '群馬', href: 'gunma.htm' },
+    ]},
+    { label: '首都圏（東京除く）', children: [
+      { label: '埼玉',     href: 'saitama.htm' },
+      { label: '千葉',     href: 'chiba.htm' },
+      { label: '神奈川東部', href: 'kanagawa_e.htm' },
+      { label: '神奈川西部', href: 'kanagawa_w.htm' },
+    ]},
+    { label: '東京（北部）',     href: 'tokio_n.htm' },
+    { label: '東京（中央）',     href: 'tokio_c.htm' },
+    { label: '東京（南部）',     href: 'tokio_s.htm' },
+    { label: '東京（西部）',     href: 'tokio_w.htm' },
+    { label: '甲信越',           href: 'koshinetsu.htm' },
+  ]},
+  'repo_w.htm': { label: '西日本', groups: [
+    { label: '北陸',     href: 'hokuriku.htm' },
+    { label: '東海',     children: [
+      { label: '静岡', href: 'shizuoka.htm' },
+      { label: '東海', href: 'tokai.htm' },
+      { label: '愛知', href: 'aichi.htm' },
+    ]},
+    { label: '京阪神',   children: [
+      { label: '近畿',     href: 'kinki.htm' },
+      { label: '京都',     href: 'kyoto.htm' },
+      { label: '大阪北部', href: 'n_osaka.htm' },
+      { label: '大阪南部', href: 's_osaka.htm' },
+      { label: '兵庫',     href: 'hyogo.htm' },
+    ]},
+    { label: '中国',         href: 'chugoku.htm' },
+    { label: '四国',         href: 'shikoku.htm' },
+    { label: '北九州',       href: 'kyusyu_n.htm' },
+    { label: '南九州・沖縄', href: 'kyusyu_s.htm' },
+  ]},
+};
+
 // ナビメニュー カテゴリ定義（Option A）
 const NAV_HOME_FNAME = 'pink.htm';
 const NAV_CATEGORY_DEFS = [
@@ -989,6 +1056,17 @@ const NAV_CATEGORY_DEFS = [
     'chugoku.htm','shikoku.htm','kyusyu_n.htm','kyusyu_s.htm',
   ]},
 ];
+
+// ページ別ナビ非表示定義
+// hideCategories: カテゴリごと非表示（ラベル+ボタン全削除）
+// hideLabels    : カテゴリラベルのみ削除（ボタンは残す）
+// hideFnames    : 特定ボタンを削除
+const PAGE_NAV_CONTROL = {
+  'organ.htm':   { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm', 'new_mmb.htm']) },
+  'new_mmb.htm': { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm', 'new_mmb.htm']) },
+  'bosyu.htm':   { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm']) },
+  'papers.htm':  { hideFnames: new Set(['papers.htm']), renameLabels: new Map([['研究・情報', '論文カテゴリ']]) },
+};
 
 // 業種タブ：img ファイル名 → 業種ラベル（derh.png → デリヘル など）
 const GENRE_IMG_MAP = {
@@ -1140,7 +1218,12 @@ function replaceImgButtons(doc, currentUrl = null) {
   catGroup.className = 'nav-btn-group';
   let hasCatBtns = false;
 
+  const navControl = PAGE_NAV_CONTROL[currentFname] || {};
+
   NAV_CATEGORY_DEFS.forEach(cat => {
+    // カテゴリ全体を非表示（ラベル＋ボタンすべて削除）
+    if (navControl.hideCategories?.has(cat.label)) return;
+
     const fnameSet = new Set(cat.fnames);
     let catEntries;
     if (cat.label === 'レポート') {
@@ -1153,20 +1236,27 @@ function replaceImgButtons(doc, currentUrl = null) {
         const bi = b.isYear ? 999 : cat.fnames.indexOf(b.fname);
         return ai - bi;
       });
-    } else if (cat.label === '組織・参加') {
-      catEntries = navEntries.filter(e => fnameSet.has(e.fname));
     } else {
       catEntries = navEntries.filter(e => fnameSet.has(e.fname));
     }
+
+    // 特定ボタンを除外
+    if (navControl.hideFnames) {
+      catEntries = catEntries.filter(e => !navControl.hideFnames.has(e.fname));
+    }
     if (catEntries.length === 0) return;
 
-    // ラベル変換：地方ページの「地域」→「エリア（広域）」
-    const displayLabel = (cat.label === '地域' && isRegionPage) ? 'エリア（広域）' : cat.label;
+    // ラベル変換：地方ページの「地域」→「エリア（広域）」、ページ別リネーム
+    const displayLabel = (cat.label === '地域' && isRegionPage) ? 'エリア（広域）'
+      : (navControl.renameLabels?.get(cat.label) ?? cat.label);
 
-    const header = doc.createElement('div');
-    header.className = 'nav-category-header';
-    header.textContent = displayLabel;
-    catGroup.appendChild(header);
+    // カテゴリラベルのみ削除（ボタンは残す）
+    if (!navControl.hideLabels?.has(cat.label)) {
+      const header = doc.createElement('div');
+      header.className = 'nav-category-header';
+      header.textContent = displayLabel;
+      catGroup.appendChild(header);
+    }
     catEntries.forEach(e => catGroup.appendChild(e.btn));
     hasCatBtns = true;
   });
@@ -1325,6 +1415,9 @@ function render(html, baseUrl) {
     }
   }
 
+  // 地方アコーディオン（東日本/西日本）
+  buildRegionAccordion();
+
   // 地区ページの店舗リスト変換（applyFilter の後で実行）
   buildShopList(baseUrl);
 
@@ -1332,6 +1425,69 @@ function render(html, baseUrl) {
 
   // レポートページ：調査部補足事項の全角カンマ（，）を改行に変換
   if (/\/rpt\d*\//i.test(baseUrl)) formatReportSupplement();
+}
+
+// ── 地方アコーディオン構築（東日本/西日本ボタンをインライン展開に置換） ────────
+function buildRegionAccordion() {
+  const BASE = 'https://pinsalo.info/sp/';
+  Object.entries(REGION_GROUPS).forEach(([fname, regionDef]) => {
+    const btn = renderedEl.querySelector(`a[data-nav-btn][href$="${fname}"], a[data-nav-btn][href$="${fname}?"]`);
+    if (!btn) return;
+
+    const accordion = document.createElement('div');
+    accordion.className = 'region-accordion';
+
+    // ── ヘッダー（東日本 / 西日本）
+    const toggle = document.createElement('div');
+    toggle.className = 'region-accordion-toggle';
+    toggle.textContent = regionDef.label;
+    accordion.appendChild(toggle);
+
+    // ── ボディ
+    const body = document.createElement('div');
+    body.className = 'region-accordion-body';
+
+    regionDef.groups.forEach(group => {
+      const item = document.createElement('div');
+      item.className = 'region-group-item' + (group.children ? ' has-children' : '');
+      item.textContent = group.label;
+
+      if (group.children) {
+        // サブメニュー展開型
+        const subBody = document.createElement('div');
+        subBody.className = 'region-sub-body';
+        group.children.forEach(child => {
+          const subItem = document.createElement('div');
+          subItem.className = 'region-sub-item';
+          subItem.textContent = child.label;
+          subItem.addEventListener('click', e => {
+            e.stopPropagation();
+            loadPage(BASE + child.href);
+          });
+          subBody.appendChild(subItem);
+        });
+        item.addEventListener('click', () => {
+          item.classList.toggle('open');
+          subBody.classList.toggle('open');
+        });
+        body.appendChild(item);
+        body.appendChild(subBody);
+      } else {
+        // 直接遷移型
+        item.addEventListener('click', () => loadPage(BASE + group.href));
+        body.appendChild(item);
+      }
+    });
+
+    accordion.appendChild(body);
+    toggle.addEventListener('click', () => {
+      toggle.classList.toggle('open');
+      body.classList.toggle('open');
+    });
+
+    // 元のナビボタンと置き換え
+    btn.replaceWith(accordion);
+  });
 }
 
 // ── 調査部補足事項 カンマ→改行変換 ──────────────────────────────────────────
@@ -1917,6 +2073,7 @@ document.getElementById('m-close').onclick  = () => { sidebar.classList.remove('
 sidebarOverlay.onclick = () => { sidebar.classList.remove('open'); sidebarOverlay.classList.remove('open'); };
 document.getElementById('m-reload').onclick = () => { cache.delete(currentUrl); loadPage(currentUrl, false); };
 document.getElementById('b-home').onclick   = () => loadPage('https://pinsalo.info/sp/pink.htm');
+document.getElementById('page-title').onclick = () => loadPage('https://pinsalo.info/sp/pink.htm');
 document.getElementById('b-back').onclick   = () => { if (historyStack.length > 0) { loadPage(historyStack.pop(), false); } };
 document.getElementById('b-ext').onclick    = () => { if (currentUrl) window.open(currentUrl, '_blank'); };
 statusRetry.onclick = () => { cache.delete(currentUrl); loadPage(currentUrl, false); };
