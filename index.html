@@ -14,6 +14,7 @@
     --text: #0f172a; --muted: #64748b; --link: #2563eb;
     --header-h: 50px; --bottom-h: 56px;
     --header-bg: #1e293b;
+    --content-fs: 13px;
   }
   body.dark {
     --bg: #0f172a; --surface: #1e293b; --surface2: #162032;
@@ -68,32 +69,32 @@
 
   /* コンテンツ */
   #content-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; min-height: 0; box-shadow: inset 0 6px 8px -6px rgba(0,0,0,0.07); }
-  #rendered { padding: 12px; display: none; color: var(--text); font-size: 13px; line-height: 1.8; }
+  #rendered { padding: 12px; display: none; color: var(--text); font-size: var(--content-fs); line-height: 1.8; }
   #rendered div.box1, #rendered div.box2 {
     margin: 2px 0; padding: 10px 14px;
     background: var(--surface);
     border-left: 3px solid var(--accent-dim);
     border-radius: 0 8px 8px 0;
-    font-size: 13px; line-height: 1.85;
+    font-size: var(--content-fs); line-height: 1.85;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   }
-  #rendered div.box3 { margin: 16px 0 4px; padding: 0 14px; color: var(--muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+  #rendered div.box3 { margin: 16px 0 4px; padding: 0 14px; color: var(--muted); font-weight: 700; font-size: var(--content-fs); text-transform: uppercase; letter-spacing: 0.08em; }
   #rendered table { width: 100% !important; border-collapse: collapse; margin: 10px 0; font-size: 12px; table-layout: fixed; }
   #rendered td { border: 1px solid var(--border); padding: 7px; vertical-align: top; color: var(--text) !important; background: var(--surface) !important; word-wrap: break-word; }
   #rendered a { color: var(--link); text-decoration: none; }
 
   /* ナビメニュー（縦リスト・カテゴリ付き） */
   .nav-btn-group { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); background: var(--surface); }
-  .nav-category-header { padding: 12px 18px 4px; font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; background: var(--bg); border-top: 1px solid var(--border); }
+  .nav-category-header { padding: 12px 18px 4px; font-size: var(--content-fs); font-weight: 700; color: var(--muted); letter-spacing: 0.08em; background: var(--bg); border-top: 1px solid var(--border); }
   .nav-btn-group > a[data-nav-btn]:first-child { border-top: none; }
   .nav-category-header:first-child { border-top: none; }
-  .nav-btn-group a[data-nav-btn] { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); border-top: none; background: transparent; color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.12s; }
+  .nav-btn-group a[data-nav-btn] { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); border-top: none; background: transparent; color: var(--text); font-size: var(--content-fs); font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.12s; }
   .nav-btn-group a[data-nav-btn]::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 18px; font-weight: 300; }
   .nav-btn-group a[data-nav-btn]:active { background: var(--accent-dim); color: var(--accent); }
   #rendered img { max-width: 100% !important; height: auto !important; border-radius: 6px; }
 
   /* レポートページ本文（rpt配下）のテキスト整形 */
-  #rendered p  { margin: 0.55em 0; line-height: 1.85; font-size: 13px; }
+  #rendered p  { margin: 0.55em 0; line-height: 1.85; font-size: var(--content-fs); }
   #rendered h1, #rendered h2, #rendered h3,
   #rendered h4, #rendered h5, #rendered h6 {
     margin: 0.8em 0 0.4em; font-weight: 700; line-height: 1.5; color: var(--text);
@@ -101,7 +102,9 @@
   #rendered hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
   /* 地区ページ：店舗エントリ */
-  .shop-entry-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; cursor: pointer; }
+  .shop-entry-name { display: flex; align-items: center; gap: 8px; font-size: var(--content-fs); cursor: pointer; }
+  .shop-hit-count { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .shop-entry-icon { flex-shrink: 0; margin-left: auto; }
   .shop-entry-icon { flex-shrink: 0; font-size: 11px; color: var(--muted); transition: transform 0.25s; display: inline-block; }
   .shop-entry-icon.open { transform: rotate(180deg); }
   .shop-entry-reports { padding-top: 8px; margin-top: 6px; border-top: 1px solid var(--border); }
@@ -163,7 +166,9 @@
   .nav-btn:active { color: var(--accent); }
   .nav-btn svg { width: 18px; height: 18px; stroke-width: 1.75; }
   #b-back { transition: opacity 0.2s; }
-  #res-count { color: var(--accent); font-size: 15px; font-weight: 700; line-height: 1; }
+  .fs-icon { font-size: 17px; font-weight: 700; line-height: 1; font-family: serif; }
+  /* ジャンルタブの店舗件数バッジ */
+  .genre-shop-count { flex: 0 0 auto; font-size: 11px; color: var(--muted); padding: 6px 4px 6px 2px; align-self: center; margin-left: auto; white-space: nowrap; }
 
   /* ステータスオーバーレイ */
   #status-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); z-index: 50; }
@@ -260,7 +265,7 @@
 <nav id="bottom-nav">
   <div class="nav-btn" id="b-back"><i data-lucide="arrow-left"></i>戻る</div>
   <div class="nav-btn" id="b-home"><i data-lucide="home"></i>TOP</div>
-  <div class="nav-btn"><i data-lucide="list"></i><span id="res-count">-</span></div>
+  <div class="nav-btn" id="b-font"><span class="fs-icon">あ</span><span id="font-label">小</span></div>
   <div class="nav-btn" id="b-ext"><i data-lucide="external-link"></i>元サイト</div>
 </nav>
 
@@ -367,8 +372,16 @@ const statusRetry    = document.getElementById('status-retry');
 const statusBack     = document.getElementById('status-back');
 const renderedEl     = document.getElementById('rendered');
 const contentArea    = document.getElementById('content-area');
-const resCount       = document.getElementById('res-count');
 const bBack          = document.getElementById('b-back');
+
+// ── 文字サイズ切替 ────────────────────────────────────────────────────────
+const FS_STEPS = [{ size: '13px', label: '小' }, { size: '15px', label: '中' }, { size: '17px', label: '大' }];
+let fsIdx = 0;
+document.getElementById('b-font').addEventListener('click', () => {
+  fsIdx = (fsIdx + 1) % FS_STEPS.length;
+  document.documentElement.style.setProperty('--content-fs', FS_STEPS[fsIdx].size);
+  document.getElementById('font-label').textContent = FS_STEPS[fsIdx].label;
+});
 
 // ── エンコーディング自動判定 ─────────────────────────────────────────────
 // charset meta を読んで UTF-8 / Shift-JIS を選択、文字化け量で最終判断
@@ -472,7 +485,6 @@ function applyFilter() {
     histMain.style.display    = hasFilter ? 'none' : '';
     histResults.style.display = hasFilter ? ''     : 'none';
     if (!hasFilter) {
-      resCount.textContent = '-';
       updateFilterSummary();
       return;
     }
@@ -483,7 +495,7 @@ function applyFilter() {
 
   const entries = Array.from(document.querySelectorAll('#rendered div.box1, #rendered div.box2'));
 
-  if (entries.length === 0) { resCount.textContent = '-'; return; }
+  if (entries.length === 0) return;
 
   // ハイライト解除（前回分を復元）
   entries.forEach(el => {
@@ -496,7 +508,6 @@ function applyFilter() {
   const noFilter = !activeFilter.btype && !activeFilter.region && !activeFilter.pref && !activeFilter.keyword;
   if (noFilter) {
     entries.forEach(el => el.style.display = '');
-    resCount.textContent = entries.length;
     return;
   }
 
@@ -549,7 +560,7 @@ function applyFilter() {
 
   // 年ラベル (box3) は常に表示
   document.querySelectorAll('#rendered div.box3').forEach(el => el.style.display = '');
-  resCount.textContent = count;
+  document.getElementById('filter-toggle-label').textContent = `フィルター (${count}件)`;
   updateFilterSummary();
 
   // キーワードハイライト（2文字以上・表示中エントリのみ）
@@ -1092,6 +1103,14 @@ function replaceImgButtons(doc, currentUrl = null) {
 
   if (navEntries.length === 0 && genreTabs.length === 0) return;
 
+  // 現在ページ種別の判定
+  // - isRegionPage : 東日本/西日本ページ（ナビ先が都道府県）
+  // - isPrefPage   : 都道府県ページ（ナビ先が地区）
+  const currentFname = (currentUrl || '').split('/').pop().split('?')[0].toLowerCase();
+  const isRegionPage = REGION_NAV_PAGES.has(currentFname);
+  const prefFnames   = new Set(NAV_CATEGORY_DEFS.find(c => c.label === '地域')?.fnames || []);
+  const isPrefPage   = prefFnames.has(currentFname);
+
   // ① ホームボタンを body 先頭に単独挿入
   const homeEntry = navEntries.find(e => e.fname === NAV_HOME_FNAME);
   let homeGroup = null;
@@ -1104,7 +1123,6 @@ function replaceImgButtons(doc, currentUrl = null) {
 
   // ① ' 業種タブストリップをホームの直後に挿入（地区ページのジャンルナビ）
   if (genreTabs.length > 0) {
-    const currentFname = (currentUrl || '').split('/').pop().split('?')[0].toLowerCase();
     const tabStrip = doc.createElement('div');
     tabStrip.className = 'genre-tabs';
     genreTabs.forEach(({ href, label }) => {
@@ -1129,6 +1147,8 @@ function replaceImgButtons(doc, currentUrl = null) {
     const fnameSet = new Set(cat.fnames);
     let catEntries;
     if (cat.label === 'レポート') {
+      // 都道府県ページでは「レポート」カテゴリ（親地方リンク等）を非表示
+      if (isPrefPage) return;
       catEntries = navEntries.filter(e => fnameSet.has(e.fname) || e.isYear);
       // fnames 配列の順番通りに並べ替え（年リンクは末尾）
       catEntries.sort((a, b) => {
@@ -1143,9 +1163,12 @@ function replaceImgButtons(doc, currentUrl = null) {
     }
     if (catEntries.length === 0) return;
 
+    // ラベル変換：地方ページの「地域」→「エリア（広域）」
+    const displayLabel = (cat.label === '地域' && isRegionPage) ? 'エリア（広域）' : cat.label;
+
     const header = doc.createElement('div');
     header.className = 'nav-category-header';
-    header.textContent = cat.label;
+    header.textContent = displayLabel;
     catGroup.appendChild(header);
     catEntries.forEach(e => catGroup.appendChild(e.btn));
     hasCatBtns = true;
@@ -1166,7 +1189,7 @@ function replaceImgButtons(doc, currentUrl = null) {
     areaGroup.className = 'nav-btn-group';
     const areaHeader = doc.createElement('div');
     areaHeader.className = 'nav-category-header';
-    areaHeader.textContent = '地区';
+    areaHeader.textContent = isPrefPage ? 'エリア（詳細）' : '地区';
     areaGroup.appendChild(areaHeader);
     uncategorized.forEach(e => areaGroup.appendChild(e.btn));
   }
@@ -1493,7 +1516,7 @@ async function searchHistoryAll(keyword) {
         });
       }
 
-      resCount.textContent = filtered.length;
+      document.getElementById('filter-toggle-label').textContent = `フィルター (${filtered.length}件)`;
       updateFilterSummary();
       // 戻るボタン使用時のスクロール位置復元
       const savedPos = scrollMap.get(currentUrl);
@@ -1539,35 +1562,96 @@ function buildShopList(baseUrl) {
     }
   }
 
+  let shopCount = 0;
   entries.forEach(el => {
     // リンクを含まないエントリはカテゴリラベル（例：「札幌デリヘル」）なのでスキップ
     if (!el.querySelector('a[href]')) return;
 
-    // 店名抽出：リンクテキスト内の「「店名」」パターンを最優先
-    const shopName = (() => {
-      for (const link of el.querySelectorAll('a[href]')) {
-        const m = link.textContent.match(/「([^」]+)」/);
-        if (m && m[1].length >= 2) return m[1];
+    // 店名・個別エリア抽出
+    // _e ページは「エリア・業種<br>店名」形式のため <br> で分割して店名を取得し、
+    // エリア部分から個別地名も抽出してレポート検索精度を上げる
+    let shopName = '';
+    let shopAreaLabel = areaLabel; // デフォルトはページ単位のエリア
+
+    // ① 「店名」パターン（最優先）
+    for (const link of el.querySelectorAll('a[href]')) {
+      const m = link.textContent.match(/「([^」]+)」/);
+      if (m && m[1].length >= 2) { shopName = m[1]; break; }
+    }
+
+    if (!shopName) {
+      // ② td 内の <br> 区切り「エリア・業種<br>店名」パターン（_e ページ対応）
+      const firstTd = el.querySelector('td');
+      if (firstTd && firstTd.querySelector('br')) {
+        const parts = [];
+        for (const node of firstTd.childNodes) {
+          if (node.nodeType === 3) {
+            const t = node.textContent.trim();
+            if (t) parts.push(t);
+          }
+        }
+        if (parts.length >= 2) {
+          shopName = parts[parts.length - 1]; // 最後が店名
+          const prefix = parts[0];            // 例: "塩竈・デリヘル"
+          const areaM = prefix.match(/^([^・]+)/);
+          if (areaM && areaM[1].trim().length >= 2) shopAreaLabel = areaM[1].trim();
+        } else if (parts.length === 1) {
+          shopName = parts[0];
+        }
       }
-      // 次点：最初のテキストノード（aタグ外）
+    }
+
+    if (!shopName) {
+      // ③ 直下テキストノード
       for (const node of el.childNodes) {
         if (node.nodeType === 3) {
           const t = node.textContent.replace(/[\s\u00a0]+/g, ' ').trim();
-          if (t.length >= 2) return t;
+          if (t.length >= 2) { shopName = t; break; }
         }
       }
-      // フォールバック：テキスト全体の先頭40文字
-      return el.textContent.replace(/\s+/g, ' ').trim().slice(0, 40);
-    })();
+    }
+
+    if (!shopName) {
+      shopName = el.textContent.replace(/\s+/g, ' ').trim().slice(0, 40);
+    }
+
+    // _e ページ補正：「都市・業種 店名」形式が店名に残っていたら分離
+    // （<br>なしで1テキストノードに収まっているケース）
+    if (shopAreaLabel === areaLabel && shopName.includes('・')) {
+      const m = shopName.match(/^(.{2,8})・(.+)/);
+      if (m) {
+        shopAreaLabel = m[1].trim();
+        const rest = m[2].trim();
+        const tokens = rest.split(/[\s\u3000\u00a0]+/).filter(Boolean);
+        if (tokens.length >= 2) shopName = tokens[tokens.length - 1];
+        else if (tokens.length === 1) shopName = tokens[0];
+      }
+    }
+    // それでも都市名が取れず areaLabel が「その他〇〇」なら検索精度より網羅優先でクリア
+    if (shopAreaLabel === areaLabel && areaLabel.startsWith('その他')) {
+      shopAreaLabel = '';
+    }
 
     el.dataset.shopName = shopName;
-    el.dataset.areaLabel = areaLabel;
+    el.dataset.areaLabel = shopAreaLabel;
     el.innerHTML =
-      `<div class="shop-entry-name">${shopName}<span class="shop-entry-icon">▼</span></div>` +
+      `<div class="shop-entry-name">${shopName}<span class="shop-hit-count"></span><span class="shop-entry-icon">▼</span></div>` +
       `<div class="shop-entry-reports" style="display:none"></div>`;
 
     el.querySelector('.shop-entry-name').addEventListener('click', () => toggleShopEntry(el));
+    shopCount++;
   });
+
+  // ジャンルタブに店舗件数を表示
+  if (shopCount > 0) {
+    const genreTabsEl = renderedEl.querySelector('.genre-tabs');
+    if (genreTabsEl) {
+      const badge = document.createElement('span');
+      badge.className = 'genre-shop-count';
+      badge.textContent = `${shopCount}店`;
+      genreTabsEl.appendChild(badge);
+    }
+  }
 }
 
 async function toggleShopEntry(el) {
@@ -1614,7 +1698,9 @@ async function toggleShopEntry(el) {
         rDiv.appendChild(a);
       });
     }
-    resCount.textContent = results.length;
+    // 件数を店名行のバッジへ反映
+    const countEl = el.querySelector('.shop-hit-count');
+    if (countEl) countEl.textContent = `${results.length}件`;
   } catch(err) {
     rDiv.innerHTML = `<div style="padding:6px 0;font-size:12px;color:var(--muted)">エラー: ${err.message}</div>`;
   }
