@@ -14,7 +14,7 @@
     --text: #0f172a; --muted: #64748b; --link: #2563eb;
     --header-h: 50px; --bottom-h: 56px;
     --header-bg: #1e293b;
-    --content-fs: 13px;
+    --content-fs: 17px;
   }
   body.dark {
     --bg: #0f172a; --surface: #1e293b; --surface2: #162032;
@@ -166,7 +166,7 @@
   .nav-btn:active { color: var(--accent); }
   .nav-btn svg { width: 18px; height: 18px; stroke-width: 1.75; }
   #b-back { transition: opacity 0.2s; }
-  .fs-icon { font-size: 17px; font-weight: 700; line-height: 1; font-family: serif; }
+  .fs-icon { font-size: 17px; font-weight: 700; line-height: 1; font-family: 'Noto Sans JP', sans-serif; }
   /* ジャンルタブの店舗件数バッジ */
   .genre-shop-count { flex: 0 0 auto; font-size: 11px; color: var(--muted); padding: 6px 4px 6px 2px; align-self: center; margin-left: auto; white-space: nowrap; }
 
@@ -288,7 +288,7 @@
 <nav id="bottom-nav">
   <div class="nav-btn" id="b-back"><i data-lucide="arrow-left"></i>戻る</div>
   <div class="nav-btn" id="b-home"><i data-lucide="home"></i>TOP</div>
-  <div class="nav-btn" id="b-font"><span class="fs-icon">あ</span><span id="font-label">小</span></div>
+  <div class="nav-btn" id="b-font"><span class="fs-icon">あ</span><span id="font-label">中</span></div>
   <div class="nav-btn" id="b-ext"><i data-lucide="external-link"></i>元サイト</div>
 </nav>
 
@@ -368,6 +368,7 @@ const PREF_MAP = {
 
 // ── 状態 ──────────────────────────────────────────────────────────────────
 let currentUrl = '';
+let navFromFname = null; // 直前に表示していたページのfname（子ページへのナビ制御継承用）
 const historyStack = [];
 const cache = new Map();
 const scrollMap = new Map();
@@ -395,8 +396,14 @@ const contentArea    = document.getElementById('content-area');
 const bBack          = document.getElementById('b-back');
 
 // ── 文字サイズ切替 ────────────────────────────────────────────────────────
-const FS_STEPS = [{ size: '13px', label: '小' }, { size: '15px', label: '中' }, { size: '17px', label: '大' }];
-let fsIdx = 0;
+const FS_STEPS = [
+  { size: '13px', label: '特小' },
+  { size: '15px', label: '小' },
+  { size: '17px', label: '中' },
+  { size: '19px', label: '大' },
+  { size: '21px', label: '特大' },
+];
+let fsIdx = 2; // デフォルト: 中(17px)
 document.getElementById('b-font').addEventListener('click', () => {
   fsIdx = (fsIdx + 1) % FS_STEPS.length;
   document.documentElement.style.setProperty('--content-fs', FS_STEPS[fsIdx].size);
@@ -625,6 +632,15 @@ const NAV_LABELS = {
   'pape_g.htm':     '業界動向調査',
   'pape_c.htm':     '風俗関連法規',
   'pape_h.htm':     'ノンセクション',
+  // pape_g.htm（業界動向調査）のサブカテゴリページ
+  'pape_g_e.htm':   '東日本',
+  'pape_g_w.htm':   '西日本',
+  // pape_b.htm（医学・心理学）のサブカテゴリページ
+  'kansen.htm':     '感染症',
+  'kensa.htm':      '性病検査',
+  'ed.htm':         'ED（勃起障害）',
+  'sinri.htm':      '心理学',
+  'b_etc.htm':      'その他（医学）',
   'kaimuall.htm':   '会務報告',
   'ranking.php':    'ランキング',
   'bosyu.htm':      '会員募集',
@@ -1066,6 +1082,28 @@ const PAGE_NAV_CONTROL = {
   'new_mmb.htm': { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm', 'new_mmb.htm']) },
   'bosyu.htm':   { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm']) },
   'papers.htm':  { hideFnames: new Set(['papers.htm']), renameLabels: new Map([['研究・情報', '論文カテゴリ']]) },
+  // 論文カテゴリ（papers.htm）の直下サブページ：「研究・情報」ラベルと「研究論文」ボタンを削除
+  'pape_a.htm':  { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
+  'pape_b.htm':  { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']), renameLabels: new Map([['地区', 'カテゴリ']]) },
+  'pape_c.htm':  { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
+  'pape_d.htm':  { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
+  'pape_g.htm':  { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']), renameLabels: new Map([['地区', 'カテゴリ']]) },
+  // 業界動向調査（pape_g.htm）の下位ページ
+  'pape_g_e.htm': { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_g.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'pape_g_w.htm': { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_g.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'pape_h.htm':  { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
+  // 医学・心理学（pape_b.htm）の下位ページ：フィルターリボン・地区グループ・親子リンクも削除
+  'kansen.htm':  { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_b.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'kensa.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_b.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'ed.htm':      { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_b.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'sinri.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_b.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'b_etc.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_b.htm']), hideGenreTabs: true, hideAreaGroup: true },
+};
+
+// 親ページから遷移してきた子ページに継承されるナビ制御
+// （子ページのファイル名が事前に不明なケースに対応）
+const PAGE_NAV_CHILD_CONTROL = {
+  'organ.htm': { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm', 'new_mmb.htm']) },
 };
 
 // 業種タブ：img ファイル名 → 業種ラベル（derh.png → デリヘル など）
@@ -1088,7 +1126,30 @@ function labelFromImgSrc(img) {
   return '';
 }
 
+// 2つの navControl オブジェクトをマージ（Sets を合成、extra が優先）
+function mergeNavControl(base, extra) {
+  if (!extra || Object.keys(extra).length === 0) return base;
+  const result = { ...base };
+  if (extra.hideCategories) result.hideCategories = new Set([...(base.hideCategories || []), ...extra.hideCategories]);
+  if (extra.hideLabels)     result.hideLabels     = new Set([...(base.hideLabels     || []), ...extra.hideLabels]);
+  if (extra.hideFnames)     result.hideFnames     = new Set([...(base.hideFnames     || []), ...extra.hideFnames]);
+  if (extra.hideGenreTabs)  result.hideGenreTabs  = true;
+  if (extra.hideAreaGroup)  result.hideAreaGroup  = true;
+  if (extra.renameLabels)   result.renameLabels   = new Map([...(base.renameLabels || new Map()), ...extra.renameLabels]);
+  return result;
+}
+
 function replaceImgButtons(doc, currentUrl = null) {
+  // ページ種別・ナビ制御をループ開始前に確定（hideGenreTabs 判定に必要）
+  const currentFname = (currentUrl || '').split('/').pop().split('?')[0].toLowerCase();
+  const isRegionPage = REGION_NAV_PAGES.has(currentFname);
+  const prefFnames   = new Set(NAV_CATEGORY_DEFS.find(c => c.label === '地域')?.fnames || []);
+  const isPrefPage   = prefFnames.has(currentFname);
+  const navControl   = mergeNavControl(
+    PAGE_NAV_CONTROL[currentFname] || {},
+    PAGE_NAV_CHILD_CONTROL[navFromFname] || {}
+  );
+
   const navEntries = []; // { btn, fname, isYear }
   const genreTabs  = []; // { href, label } — 業種タブ
 
@@ -1117,21 +1178,23 @@ function replaceImgButtons(doc, currentUrl = null) {
       if (jtpMatch) finalHref = new URL(jtpMatch[1], 'https://pinsalo.info/sp/').href;
       fname = finalHref.split('/').pop().split('?')[0];
 
-      // 業種タブ判定（img ファイル名で識別）
-      const imgFname = (img.getAttribute('src') || '').split('/').pop();
-      if (GENRE_IMG_MAP[imgFname]) {
-        genreTabs.push({ href: finalHref, label: GENRE_IMG_MAP[imgFname] });
+      // ラベル解決：NAV_LABELS → 業種タブ → 年号 → alt の優先順
+      const imgFname  = (img.getAttribute('src') || '').split('/').pop();
+      const yearLabel = labelFromImgSrc(img);
+      if (NAV_LABELS[fname]) {
+        // NAV_LABELS 登録済み → 通常ナビボタン（業種タブより優先）
+        label = NAV_LABELS[fname];
+      } else if (GENRE_IMG_MAP[imgFname]) {
+        // 業種タブ（img ファイル名で識別）。hideGenreTabs が有効なら除去のみ
+        if (!navControl.hideGenreTabs) {
+          genreTabs.push({ href: finalHref, label: GENRE_IMG_MAP[imgFname] });
+        }
         const gParent = a.parentNode;
         a.remove();
         if (gParent && gParent !== doc.body && !gParent.textContent.trim() && gParent.children.length === 0) {
           gParent.remove();
         }
         return;
-      }
-
-      const yearLabel = labelFromImgSrc(img);
-      if (NAV_LABELS[fname]) {
-        label = NAV_LABELS[fname];
       } else if (yearLabel) {
         label = yearLabel;
         isYear = true;
@@ -1178,14 +1241,6 @@ function replaceImgButtons(doc, currentUrl = null) {
 
   if (navEntries.length === 0 && genreTabs.length === 0) return;
 
-  // 現在ページ種別の判定
-  // - isRegionPage : 東日本/西日本ページ（ナビ先が都道府県）
-  // - isPrefPage   : 都道府県ページ（ナビ先が地区）
-  const currentFname = (currentUrl || '').split('/').pop().split('?')[0].toLowerCase();
-  const isRegionPage = REGION_NAV_PAGES.has(currentFname);
-  const prefFnames   = new Set(NAV_CATEGORY_DEFS.find(c => c.label === '地域')?.fnames || []);
-  const isPrefPage   = prefFnames.has(currentFname);
-
   // ① ホームボタンを body 先頭に単独挿入
   const homeEntry = navEntries.find(e => e.fname === NAV_HOME_FNAME);
   let homeGroup = null;
@@ -1217,8 +1272,6 @@ function replaceImgButtons(doc, currentUrl = null) {
   const catGroup = doc.createElement('div');
   catGroup.className = 'nav-btn-group';
   let hasCatBtns = false;
-
-  const navControl = PAGE_NAV_CONTROL[currentFname] || {};
 
   NAV_CATEGORY_DEFS.forEach(cat => {
     // カテゴリ全体を非表示（ラベル＋ボタンすべて削除）
@@ -1271,12 +1324,13 @@ function replaceImgButtons(doc, currentUrl = null) {
   );
 
   let areaGroup = null;
-  if (uncategorized.length > 0) {
+  if (uncategorized.length > 0 && !navControl.hideAreaGroup) {
     areaGroup = doc.createElement('div');
     areaGroup.className = 'nav-btn-group';
     const areaHeader = doc.createElement('div');
     areaHeader.className = 'nav-category-header';
-    areaHeader.textContent = isPrefPage ? 'エリア（詳細）' : '地区';
+    areaHeader.textContent = isPrefPage ? 'エリア（詳細）'
+      : (navControl.renameLabels?.get('地区') ?? '地区');
     areaGroup.appendChild(areaHeader);
     uncategorized.forEach(e => areaGroup.appendChild(e.btn));
   }
@@ -1380,8 +1434,8 @@ function render(html, baseUrl) {
 
   const isTopPage    = /pink\.htm/i.test(baseUrl);
   const isHistoryAll = /historyall\.htm/i.test(baseUrl);
-  const isNoFilterPages = /\/(organ|new_mmb|bosyu)\.htm/i.test(baseUrl);
-  // フィルター表示：トップページ・会員一覧・人事異動・会員募集は非表示、historyall.htm は常時表示、それ以外は box1/box2 ありで表示
+  const isNoFilterPages = /\/(organ|new_mmb|bosyu|papers|pape_[abcdgh]|pape_g_[ew]|kansen|kensa|ed|sinri|b_etc)\.htm/i.test(baseUrl);
+  // フィルター表示：トップページ・会員一覧・人事異動・会員募集・論文カテゴリ系ページは非表示、historyall.htm は常時表示、それ以外は box1/box2 ありで表示
   const hasEntries = document.querySelectorAll('#rendered div.box1, #rendered div.box2').length > 0;
   document.getElementById('filter-dashboard').classList.toggle('hidden', isTopPage || isNoFilterPages || (!hasEntries && !isHistoryAll));
 
@@ -2015,6 +2069,8 @@ async function loadPage(url, push = true) {
   if (!url) return;
   if (currentUrl) scrollMap.set(currentUrl, contentArea.scrollTop); // 現在位置を保存
   if (push && currentUrl && currentUrl !== url) historyStack.push(currentUrl);
+  // 子ページへのナビ制御継承のため、遷移前のページfnameを記録
+  navFromFname = currentUrl ? currentUrl.split('/').pop().split('?')[0].toLowerCase() : null;
   currentUrl = url;
   updateBackBtn();
   updateActiveNav(url);
