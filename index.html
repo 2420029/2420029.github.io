@@ -148,7 +148,7 @@
   #sidebar.open { transform: translateX(280px); }
   #nav-list { flex: 1; overflow-y: auto; }
   .nav-group-label { padding: 20px 16px 6px; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
-  .nav-item { padding: 13px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text); border-left: 3px solid transparent; transition: background 0.12s, color 0.12s; }
+  .nav-item { padding: 13px 20px; border-bottom: 1px solid var(--border); font-size: var(--content-fs); font-weight: 500; cursor: pointer; color: var(--text); border-left: 3px solid transparent; transition: background 0.12s, color 0.12s; }
   .nav-item:active { background: var(--accent-dim); color: var(--accent); }
   .nav-item.active { border-left-color: var(--accent); color: var(--accent); background: var(--accent-dim); padding-left: 17px; font-weight: 600; }
   .nav-group-header { display: flex; align-items: center; justify-content: space-between; padding: 9px 16px; font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; cursor: pointer; border-bottom: 1px solid var(--border); background: var(--bg); user-select: none; transition: background 0.12s; }
@@ -512,6 +512,7 @@ function applyFilter() {
     histMain.style.display    = hasFilter ? 'none' : '';
     histResults.style.display = hasFilter ? ''     : 'none';
     if (!hasFilter) {
+      document.getElementById('filter-toggle-label').textContent = 'フィルター';
       updateFilterSummary();
       return;
     }
@@ -535,6 +536,8 @@ function applyFilter() {
   const noFilter = !activeFilter.btype && !activeFilter.region && !activeFilter.pref && !activeFilter.keyword;
   if (noFilter) {
     entries.forEach(el => el.style.display = '');
+    document.getElementById('filter-toggle-label').textContent = 'フィルター';
+    updateFilterSummary();
     return;
   }
 
@@ -1016,7 +1019,9 @@ const NAV_LABELS = {
 const REGION_GROUPS = {
   'repo_e.htm': { label: '東日本', groups: [
     { label: '北海道',           href: 'hokkai.htm' },
-    { label: '東北',             href: 'tohoku.htm' },
+    { label: '青森',             href: 'aomori.htm' },
+    { label: '岩手',             href: 'iwate.htm' },
+    { label: '東北（宮城・秋田・山形・福島）', href: 'tohoku.htm' },
     { label: '北関東',           children: [
       { label: '茨城', href: 'ibaragi.htm' },
       { label: '栃木', href: 'tochigi.htm' },
@@ -1787,21 +1792,24 @@ function buildShopList(baseUrl) {
     }
 
     if (!shopName) {
-      // ② td 内の <br> 区切り「エリア・業種<br>店名」パターン（_e ページ対応）
+      // ② td 内の <br> 区切り「エリア・業種<br>店名」パターン（_e ページ＋テーブル形式対応）
+      // BR をスキップしてテキストノード・SPAN等の要素を両方収集する
       const firstTd = el.querySelector('td');
       if (firstTd && firstTd.querySelector('br')) {
         const parts = [];
         for (const node of firstTd.childNodes) {
-          if (node.nodeType === 3) {
-            const t = node.textContent.trim();
-            if (t) parts.push(t);
-          }
+          if (node.nodeType === 1 && node.tagName === 'BR') continue; // BR は区切りとして無視
+          const t = node.textContent.trim();
+          if (t) parts.push(t);
         }
         if (parts.length >= 2) {
-          shopName = parts[parts.length - 1]; // 最後が店名
+          shopName = parts[parts.length - 1]; // 最後が店名（SPAN内の名前も取れる）
           const prefix = parts[0];            // 例: "塩竈・デリヘル"
-          const areaM = prefix.match(/^([^・]+)/);
-          if (areaM && areaM[1].trim().length >= 2) shopAreaLabel = areaM[1].trim();
+          // 「エリア・業種」形式のときだけ shopAreaLabel を更新（業種名単体では更新しない）
+          if (prefix.includes('・')) {
+            const areaM = prefix.match(/^([^・]+)/);
+            if (areaM && areaM[1].trim().length >= 2) shopAreaLabel = areaM[1].trim();
+          }
         } else if (parts.length === 1) {
           shopName = parts[0];
         }
@@ -1839,8 +1847,15 @@ function buildShopList(baseUrl) {
       shopAreaLabel = '';
     }
 
+    // 画像ボタン形式の直接レポートリンクURLを収集（histIndexCache補完用）
+    const directUrls = Array.from(el.querySelectorAll('a[href]'))
+      .filter(a => !a.textContent.trim() && /rpt\d*\/|\/reports\//i.test(a.getAttribute('href') || ''))
+      .map(a => { try { return new URL(a.getAttribute('href'), baseUrl).href; } catch { return null; } })
+      .filter(Boolean);
+
     el.dataset.shopName = shopName;
     el.dataset.areaLabel = shopAreaLabel;
+    if (directUrls.length > 0) el.dataset.directUrls = directUrls.join(',');
     el.innerHTML =
       `<div class="shop-entry-name">${shopName}<span class="shop-hit-count"></span><span class="shop-entry-icon">▼</span></div>` +
       `<div class="shop-entry-reports" style="display:none"></div>`;
@@ -1877,7 +1892,7 @@ async function toggleShopEntry(el) {
   rDiv.style.display = '';
 
   try {
-    const results = await fetchShopReports(el.dataset.shopName, el.dataset.areaLabel);
+    const results = await fetchShopReports(el.dataset.shopName, el.dataset.areaLabel, el.dataset.directUrls || '');
     rDiv.innerHTML = '';
 
     if (results.length === 0) {
@@ -1913,7 +1928,7 @@ async function toggleShopEntry(el) {
   }
 }
 
-async function fetchShopReports(shopName, areaLabel) {
+async function fetchShopReports(shopName, areaLabel, directUrlsStr = '') {
   // histIndexCache がなければ historyall.htm の各年ページから構築
   // （searchHistoryAll と共有のキャッシュを利用）
   if (!histIndexCache) {
@@ -1964,16 +1979,32 @@ async function fetchShopReports(shopName, areaLabel) {
     histIndexCache = entries;
   }
 
-  // 店名 AND 地域でフィルタリング
+  // 画像リンク経由の直接URLセット（テーブル形式ページの補完）
+  const directUrls = directUrlsStr ? new Set(directUrlsStr.split(',').filter(Boolean)) : new Set();
+
+  // 店名 AND 地域でフィルタリング（直接URLマッチを最優先）
   const kw   = shopName.toLowerCase();
   const area = areaLabel.toLowerCase();
-  return histIndexCache.filter(e => {
+  const found = histIndexCache.filter(e => {
+    if (directUrls.has(e.href)) return true;   // 直接URLが一致 → 無条件でマッチ
     const t = e.text.toLowerCase();
     if (kw.length < 2 || !t.includes(kw)) return false;
     // 地域名が取得できている場合はさらに絞り込む
     if (area) return t.includes(area);
     return true;
   });
+
+  // histIndexCacheに存在しない直接URLは年ページ未掲載の可能性 → 直接追加
+  if (directUrls.size > 0) {
+    const foundUrls = new Set(found.map(e => e.href));
+    directUrls.forEach(url => {
+      if (!foundUrls.has(url)) {
+        found.push({ href: url, text: shopName, year: '（年次不明）' });
+      }
+    });
+  }
+
+  return found;
 }
 
 // ── 店舗タイムライン（案1: 店名テキスト ＋ 案2: URLディレクトリ）──────────
