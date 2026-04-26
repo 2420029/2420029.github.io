@@ -144,7 +144,8 @@
   .nav-btn:active { color: var(--primary); }
   .nav-btn svg { width: 18px; height: 18px; stroke-width: 1.75; }
   .fs-icon { font-size: 17px; font-weight: 700; line-height: 1; font-family: 'Noto Sans JP', sans-serif; }
-  #b-back { transition: opacity 0.2s; }
+  #b-back { transition: none; color: var(--muted) !important; opacity: 1 !important; }
+  #b-back:active { color: var(--muted) !important; opacity: 1 !important; }
 
   /* ── トップページ ナビ要素 ── */
   .nav-category-header {
@@ -179,7 +180,7 @@
   .region-accordion-toggle.open::after { transform: rotate(90deg); }
   .region-accordion-toggle:active { background: var(--accent-dim); color: var(--primary); }
   .region-cnt {
-    font-size: 11px; color: var(--primary); font-weight: 700;
+    font-size: calc(var(--content-fs) - 6px); color: var(--primary); font-weight: 700;
     background: var(--primary-light); padding: 2px 8px; border-radius: 12px;
     margin-left: auto; flex-shrink: 0;
   }
@@ -193,14 +194,14 @@
   }
   .region-pref-item::after { content: '›'; color: var(--muted); font-size: 16px; font-weight: 300; }
   .region-pref-item:active { background: var(--accent-dim); color: var(--primary); }
-  .pref-cnt { font-size: 11px; color: var(--primary); font-weight: 600; }
+  .pref-cnt { font-size: 11px; color: var(--primary); font-weight: 600; margin-left: auto; margin-right: 18px; text-align: right; }
 
   /* ── 都道府県ビュー フィルター ── */
   .pref-view-wrap { padding: 12px; }
   .pref-view-title {
-    font-size: 18px; font-weight: 700; margin-bottom: 4px;
+    font-size: calc(var(--content-fs) + 1px); font-weight: 700; margin-bottom: 4px;
   }
-  .pref-view-sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .pref-view-sub { font-size: calc(var(--content-fs) - 4px); color: var(--muted); margin-bottom: 12px; }
   .filter-card {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 10px; margin-bottom: 12px; overflow: hidden;
@@ -216,11 +217,11 @@
   .filter-body { display: none; padding: 0 14px 14px; border-top: 1px solid var(--border); }
   .filter-card.expanded .filter-body { display: block; }
   .filter-row { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-  .filter-label { font-size: 12px; color: var(--muted); font-weight: 600; min-width: 60px; }
+  .filter-label { font-size: calc(var(--content-fs) - 4px); color: var(--muted); font-weight: 600; min-width: 60px; }
   .btype-chip {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 4px 10px; border: 1px solid var(--border);
-    border-radius: 16px; cursor: pointer; font-size: 13px;
+    border-radius: 16px; cursor: pointer; font-size: calc(var(--content-fs) - 4px);
     background: var(--bg); user-select: none;
   }
   .btype-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -228,27 +229,30 @@
   .filter-input {
     flex: 1; min-width: 160px; height: 32px; padding: 0 10px;
     border: 1px solid var(--border); border-radius: 6px;
-    font-size: 13px; font-family: inherit;
+    font-size: calc(var(--content-fs) - 4px); font-family: inherit;
     background: var(--bg); color: var(--text);
   }
   .filter-btn {
     height: 32px; padding: 0 12px; border-radius: 6px;
     border: 1px solid var(--border); background: var(--bg);
-    cursor: pointer; font-size: 12px; font-family: inherit; color: var(--text);
+    cursor: pointer; font-size: calc(var(--content-fs) - 5px); font-family: inherit; color: var(--text);
   }
   .filter-btn:hover { opacity: .85; }
 
   /* ── 店舗リスト ── */
   .loc-section { margin-bottom: 16px; }
   .loc-hd {
-    font-size: 13px; font-weight: 700; padding: 6px 12px;
+    font-size: var(--content-fs); font-weight: 700; padding: 6px 12px;
     background: var(--primary-light); color: var(--primary);
     border-left: 4px solid var(--primary);
     border-radius: 0 6px 6px 0; margin-bottom: 6px;
     display: flex; justify-content: space-between; align-items: center;
   }
-  .loc-hd .loc-meta { font-size: 11px; color: var(--muted); font-weight: 500; }
-  .shop-list { display: flex; flex-direction: column; gap: 4px; }
+  .loc-hd .loc-meta { font-size: calc(var(--content-fs) - 6px); color: var(--muted); font-weight: 500; }
+  .loc-arrow { transition: transform .15s; display: inline-block; }
+  .loc-section.expanded .loc-arrow { transform: rotate(90deg); }
+  .shop-list { display: none; flex-direction: column; gap: 4px; }
+  .loc-section.expanded .shop-list { display: flex; }
   .shop-card {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 8px; overflow: hidden;
@@ -275,9 +279,9 @@
   .btype-badge.btype-体験記          { background: #6b7280; }
   .btype-badge.btype-その他          { background: #94a3b8; }
   .btype-badge.btype-不明            { background: #cbd5e1; color: var(--text); }
-  .shop-name { flex: 1; font-size: 13px; word-break: break-all; }
+  .shop-name { flex: 1; font-size: var(--content-fs); word-break: break-all; }
   .shop-cnt {
-    font-size: 11px; color: var(--primary); font-weight: 700;
+    font-size: calc(var(--content-fs) - 6px); color: var(--primary); font-weight: 700;
     background: var(--bg); padding: 2px 8px; border-radius: 12px;
     border: 1px solid var(--border); flex-shrink: 0;
   }
@@ -294,7 +298,7 @@
   .report-item:active { background: var(--primary-light); }
   .report-item:last-child { border-bottom: 0; }
   .report-year { font-size: 11px; color: var(--muted); font-weight: 600; white-space: nowrap; padding-top: 1px; }
-  .report-text { font-size: 12px; word-break: break-all; line-height: 1.4; }
+  .report-text { font-size: calc(var(--content-fs) - 4px); word-break: break-all; line-height: 1.4; }
 
   /* ── ローディング ── */
   .loading { text-align: center; padding: 40px 20px; color: var(--muted); }
@@ -307,27 +311,29 @@
 
   /* ── レポート・ページ本文 ── */
   .report-view-hd { padding: 12px 12px 0; }
-  .report-view-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; line-height: 1.4; }
-  .report-view-sub { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .report-view-title { font-size: calc(var(--content-fs) - 1px); font-weight: 700; margin-bottom: 4px; line-height: 1.4; }
+  .report-view-sub { font-size: calc(var(--content-fs) - 4px); color: var(--muted); margin-bottom: 8px; }
   .report-body {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 10px; padding: 16px; margin: 8px 12px 12px;
-    word-break: break-word; line-height: 1.6; font-size: 15px;
+    word-break: break-word; line-height: 1.6; font-size: var(--content-fs);
   }
   .report-body img { max-width: 100%; height: auto; border-radius: 4px; }
   .report-body a { color: var(--primary); }
   .report-body table { max-width: 100%; border-collapse: collapse; }
-  .report-body td, .report-body th { border: 1px solid var(--border); padding: 4px 6px; font-size: 13px; }
+  .report-body td, .report-body th { border: 1px solid var(--border); padding: 4px 6px; font-size: calc(var(--content-fs) - 4px); }
   .report-body p { margin: 0.5em 0; }
 
   /* ── レガシーページ ナビボタン（cf_only移植） ── */
   .nav-btn-group { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); background: var(--surface); }
-  .nav-btn-group a[data-nav-btn] { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.12s; }
+  .nav-btn-group a[data-nav-btn] { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font-size: var(--content-fs); font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.12s; }
   .nav-btn-group a[data-nav-btn]::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 18px; font-weight: 300; }
   .nav-btn-group a[data-nav-btn]:active { background: var(--accent-dim); color: var(--accent); }
   .genre-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border); }
-  .genre-tab { padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: var(--bg); border: 1px solid var(--border); color: var(--muted); cursor: pointer; text-decoration: none; }
+  .genre-tab { padding: 4px 12px; border-radius: 20px; font-size: calc(var(--content-fs) - 4px); font-weight: 500; background: var(--bg); border: 1px solid var(--border); color: var(--muted); cursor: pointer; text-decoration: none; }
   .genre-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  #content .box1, #content .box2, #content .box3, #content p, #content td, #content th, #content li { font-size: var(--content-fs); }
+  #content table { font-size: var(--content-fs); }
 
   /* ── エラー・リンク・空 ── */
   .error {
@@ -1044,30 +1050,57 @@ function legacyReplaceImgButtons(doc, currentUrl = null) {
 
 // ── レガシーページ並列フェッチ（cf_only の fetchFast 相当）──────────────────
 async function fetchLegacy(url) {
-  const proxyUrl = `https://npk-proxy.npk-proxy.workers.dev/?url=${encodeURIComponent(url)}`;
-  dbgLegacy('fetchLegacy:start', { url, proxyUrl });
-  const started = performance.now();
-  const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(28000) });
-  dbgLegacy('fetchLegacy:response', { url, ok: res.ok, status: res.status, ms: Math.round(performance.now() - started) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const buf  = await res.arrayBuffer();
-  dbgLegacy('fetchLegacy:arrayBuffer', { url, bytes: buf.byteLength });
-  const utf8 = new TextDecoder('utf-8').decode(buf);
-  const m = utf8.match(/charset\s*=\s*["']?([^\s"';>]+)/i);
-  const declared = (m ? m[1].trim().toLowerCase() : 'utf-8');
-  dbgLegacy('fetchLegacy:charset', { url, declared, utf8Length: utf8.length, sample: utf8.slice(0, 120) });
-  if (declared.includes('shift') || declared.includes('sjis') || declared === 'x-sjis') {
+  const candidates = /\/sp\/ranking\.php(?:$|[?#])/i.test(url)
+    ? [
+        url,
+        url.replace(/ranking\.php/i, 'ranking.htm'),
+        url.replace(/\/sp\/ranking\.php/i, '/ranking.php'),
+        url.replace(/\/sp\/ranking\.php/i, '/ranking.htm'),
+      ]
+    : [url];
+  let lastErr = null;
+
+  for (const candidateUrl of candidates) {
+    const proxyUrl = `https://npk-proxy.npk-proxy.workers.dev/?url=${encodeURIComponent(candidateUrl)}`;
+    dbgLegacy('fetchLegacy:start', { url: candidateUrl, originalUrl: url, proxyUrl });
+    const started = performance.now();
+    let res;
     try {
-      const sjis = new TextDecoder('shift-jis').decode(buf);
-      dbgLegacy('fetchLegacy:decoded', { url, encoding: 'shift-jis', length: sjis.length, sample: sjis.slice(0, 120) });
-      return sjis;
+      res = await fetch(proxyUrl, { signal: AbortSignal.timeout(28000) });
     } catch (err) {
-      dbgLegacyError('fetchLegacy:shift-jis decode failed; fallback utf-8', err);
-      return utf8;
+      lastErr = err;
+      dbgLegacyError('fetchLegacy:fetch failed', { url: candidateUrl, message: err?.message });
+      continue;
     }
+
+    dbgLegacy('fetchLegacy:response', { url: candidateUrl, ok: res.ok, status: res.status, ms: Math.round(performance.now() - started) });
+    if (!res.ok) {
+      lastErr = new Error(`HTTP ${res.status}`);
+      if (res.status === 404) continue;
+      throw lastErr;
+    }
+
+    const buf  = await res.arrayBuffer();
+    dbgLegacy('fetchLegacy:arrayBuffer', { url: candidateUrl, bytes: buf.byteLength });
+    const utf8 = new TextDecoder('utf-8').decode(buf);
+    const m = utf8.match(/charset\s*=\s*["']?([^\s"';>]+)/i);
+    const declared = (m ? m[1].trim().toLowerCase() : 'utf-8');
+    dbgLegacy('fetchLegacy:charset', { url: candidateUrl, declared, utf8Length: utf8.length, sample: utf8.slice(0, 120) });
+    if (declared.includes('shift') || declared.includes('sjis') || declared === 'x-sjis') {
+      try {
+        const sjis = new TextDecoder('shift-jis').decode(buf);
+        dbgLegacy('fetchLegacy:decoded', { url: candidateUrl, encoding: 'shift-jis', length: sjis.length, sample: sjis.slice(0, 120) });
+        return sjis;
+      } catch (err) {
+        dbgLegacyError('fetchLegacy:shift-jis decode failed; fallback utf-8', err);
+        return utf8;
+      }
+    }
+    dbgLegacy('fetchLegacy:decoded', { url: candidateUrl, encoding: 'utf-8', length: utf8.length });
+    return utf8;
   }
-  dbgLegacy('fetchLegacy:decoded', { url, encoding: 'utf-8', length: utf8.length });
-  return utf8;
+
+  throw lastErr || new Error('取得できる候補URLがありません');
 }
 
 // ── レガシーページ状態変数 ────────────────────────────────────────────────────
@@ -1160,53 +1193,54 @@ function renderLegacy(html, url, restoreScroll = null) {
   });
 }
 
-async function loadLegacyPage(url, push = true) {
-  dbgLegacy('loadLegacyPage:start', { url, push, legacyCurrentUrl, currentPageUrl });
-  if (!url) {
-    dbgLegacyError('loadLegacyPage:empty url');
-    return;
-  }
+async function renderLegacyView(params) {
+  const url = params?.url || '';
+  const title = params?.title || LEGACY_NAV_LABELS[url.split('/').pop().split('?')[0]] || url.split('/').pop().split('?')[0] || 'ページ';
+  dbgLegacy('renderLegacyView:start', { url, title });
+  if (!url) return;
+
   const c = document.getElementById('content');
-  if (!c) {
-    dbgLegacyError('loadLegacyPage:#content not found');
-    return;
-  }
-  if (push && legacyCurrentUrl && legacyCurrentUrl !== url) {
-    legacyHistoryStack.push({ url: legacyCurrentUrl, scrollTop: c.scrollTop });
-    dbgLegacy('loadLegacyPage:history push', legacyHistoryStack.at(-1));
-  }
-  legacyNavFromFname = legacyCurrentUrl
-    ? legacyCurrentUrl.split('/').pop().split('?')[0].toLowerCase() : null;
+  if (!c) return;
+
+  const prevLegacy = [...navStack].reverse().slice(1).find(v => v.type === 'legacy');
+  legacyNavFromFname = prevLegacy?.params?.url
+    ? prevLegacy.params.url.split('/').pop().split('?')[0].toLowerCase()
+    : null;
   legacyCurrentUrl = url;
-  currentPageUrl   = url;
-  updateLegacyBackBtn();
-
-  const fname = url.split('/').pop().split('?')[0];
-  document.getElementById('page-title').textContent = LEGACY_NAV_LABELS[fname] || fname;
-
-  c.innerHTML = `<div class="loading"><div>${escHtml(LEGACY_NAV_LABELS[fname] || fname)} 読み込み中…</div></div>`;
-  hideFilterDashboardSafe('loadLegacyPage');
+  currentPageUrl = url;
+  document.getElementById('page-title').textContent = title;
+  c.innerHTML = `<div class="loading"><div>${escHtml(title)} 読み込み中…</div></div>`;
+  hideFilterDashboardSafe('renderLegacyView');
   closeSidebar();
+  updateBackButton();
 
   try {
-    dbgLegacy('loadLegacyPage:before fetchLegacy', { url });
     const html = await fetchLegacy(url);
-    dbgLegacy('loadLegacyPage:after fetchLegacy', { url, htmlLength: html.length });
-    dbgLegacy('loadLegacyPage:before renderLegacy', { url });
     renderLegacy(html, url);
-    dbgLegacy('loadLegacyPage:after renderLegacy', { url });
+    dbgLegacy('renderLegacyView:done', { url });
   } catch (err) {
-    dbgLegacyError('loadLegacyPage:error', { url, name: err?.name, message: err?.message, stack: err?.stack });
+    dbgLegacyError('renderLegacyView:error', { url, name: err?.name, message: err?.message, stack: err?.stack });
     c.innerHTML = `<div class="error">取得失敗: ${escHtml(err.message)}</div>
       <a class="ext-link" href="${escHtml(url)}" target="_blank" rel="noopener">元ページを直接開く ↗</a>`;
-    showLegacyDebugMessage(`loadLegacyPage error\nurl: ${url}\n${err?.name || 'Error'}: ${err?.message || err}`);
+    showLegacyDebugMessage(`renderLegacyView error
+url: ${url}
+${err?.name || 'Error'}: ${err?.message || err}`);
   }
 }
 
+function openLegacyPage(url, title = '') {
+  pushView('legacy', { url, title: title || LEGACY_NAV_LABELS[url.split('/').pop().split('?')[0]] || url.split('/').pop().split('?')[0] });
+}
+
+async function loadLegacyPage(url, push = true) {
+  // 互換用。通常は openLegacyPage() / renderLegacyView() 経由で扱う。
+  if (push) return openLegacyPage(url);
+  return renderLegacyView({ url, title: LEGACY_NAV_LABELS[url.split('/').pop().split('?')[0]] || url.split('/').pop().split('?')[0] });
+}
 function updateLegacyBackBtn() {
   const btn = document.getElementById('b-back');
   if (!btn) return;
-  btn.style.opacity = (legacyHistoryStack.length > 0 || navStack.length > 1) ? '1' : '0.35';
+  btn.style.opacity = '1';
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1389,45 +1423,44 @@ function setScrollTop(y) {
 // ═══════════════════════════════════════════════════════════════════════
 // 8. ナビゲーションスタック
 // ═══════════════════════════════════════════════════════════════════════
-const navStack = [{ type: 'home', params: {}, scrollY: 0, expandKeys: new Set() }];
+const navStack = [{ type: 'home', params: {}, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set() }];
 
 function pushView(type, params) {
   const cur = navStack[navStack.length - 1];
   cur.scrollY = getScrollTop();
   cur.expandKeys = collectExpandKeys();
-  navStack.push({ type, params, scrollY: 0, expandKeys: new Set() });
+  cur.locExpandKeys = collectLocExpandKeys();
+  navStack.push({ type, params, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set() });
   renderCurrent();
   setScrollTop(0);
   updateBackButton();
 }
 
 function goBack() {
-  // レガシーページ内の戻る
-  if (legacyHistoryStack.length > 0) {
-    const prev = legacyHistoryStack.pop();
-    loadLegacyPage(prev.url, false);
-    return;
-  }
-  // レガシーモードから v2 home へ戻る
-  if (legacyCurrentUrl) {
-    legacyCurrentUrl   = '';
-    legacyNavFromFname = null;
-    currentPageUrl     = '';
-    goHome();
-    return;
-  }
   if (navStack.length <= 1) return;
+  const cur = navStack[navStack.length - 1];
+  cur.scrollY = getScrollTop();
+  cur.expandKeys = collectExpandKeys();
+  cur.locExpandKeys = collectLocExpandKeys();
+
   navStack.pop();
-  renderCurrent();
   const prev = navStack[navStack.length - 1];
-  requestAnimationFrame(() => requestAnimationFrame(() => setScrollTop(prev.scrollY)));
+  if (prev.type !== 'legacy') {
+    legacyCurrentUrl = '';
+    legacyNavFromFname = null;
+  }
+  renderCurrent();
+  requestAnimationFrame(() => requestAnimationFrame(() => setScrollTop(prev.scrollY || 0)));
   updateBackButton();
 }
 
 function goHome() {
+  legacyCurrentUrl = '';
+  legacyNavFromFname = null;
   navStack.length = 1;
   navStack[0].scrollY = 0;
   navStack[0].expandKeys = new Set();
+  navStack[0].locExpandKeys = new Set();
   renderCurrent();
   setScrollTop(0);
   updateBackButton();
@@ -1435,13 +1468,21 @@ function goHome() {
 
 function updateBackButton() {
   const btn = document.getElementById('b-back');
-  if (btn) btn.style.opacity = navStack.length <= 1 ? '0.35' : '1';
+  if (btn) btn.style.opacity = '1';
 }
 
 function collectExpandKeys() {
   const set = new Set();
   document.querySelectorAll('.shop-card.expanded').forEach(el => {
     if (el.dataset.shopKey) set.add(el.dataset.shopKey);
+  });
+  return set;
+}
+
+function collectLocExpandKeys() {
+  const set = new Set();
+  document.querySelectorAll('.loc-section.expanded').forEach(el => {
+    if (el.dataset.loc) set.add(el.dataset.loc);
   });
   return set;
 }
@@ -1463,6 +1504,7 @@ function renderCurrent() {
     case 'year':    renderYearView(view.params.year);          break;
     case 'page':    renderPageView(view.params);              return; // async
     case 'report':  renderReport(view.params);                return; // async
+    case 'legacy':  renderLegacyView(view.params);            return; // async
   }
 }
 
@@ -1568,7 +1610,7 @@ function buildRegionAccordionEl(region, prefCnt) {
     if (c === 0) return;
     const item = document.createElement('div');
     item.className = 'region-pref-item';
-    item.innerHTML = `${escHtml(p)}<span class="pref-cnt">${c.toLocaleString()}</span>`;
+    item.innerHTML = `<span>${escHtml(p)}</span><span class="pref-cnt">${c.toLocaleString()}件</span>`;
     item.onclick = () => { closeSidebar(); pushView('pref', { pref: p }); };
     body.appendChild(item);
   });
@@ -1604,7 +1646,7 @@ function buildOverseasAccordionEl() {
   Object.entries(countryCnt).sort((a, b) => b[1] - a[1]).forEach(([country, c]) => {
     const item = document.createElement('div');
     item.className = 'region-pref-item';
-    item.innerHTML = `${escHtml(country)}<span class="pref-cnt">${c.toLocaleString()}</span>`;
+    item.innerHTML = `<span>${escHtml(country)}</span><span class="pref-cnt">${c.toLocaleString()}件</span>`;
     item.onclick = () => { closeSidebar(); pushView('country', { country }); };
     body.appendChild(item);
   });
@@ -1633,7 +1675,7 @@ function appendNavSection(container, label, items) {
     item.textContent = itemLabel;
     item.onclick = () => {
       dbgLegacy('appendNavSection:click', { section: label, item: itemLabel, url });
-      loadLegacyPage(url);
+      openLegacyPage(url, itemLabel);
     };
     section.appendChild(item);
   });
@@ -1663,7 +1705,6 @@ function renderFilteredView(title, reports) {
     <div class="filter-card" id="filter-card">
       <div class="filter-toggle" id="filter-toggle">
         <span><span class="filter-arrow">▶</span> フィルター <span id="filter-cnt-label" style="color:var(--muted);font-size:12px;font-weight:400"></span></span>
-        <span style="font-size:12px;color:var(--muted)">開閉</span>
       </div>
       <div class="filter-body">
         <div class="filter-row">
@@ -1734,6 +1775,11 @@ function renderYearView(yearLabel) {
 
 // ─ 店舗一覧描画 ─
 function renderShopArea(allReports) {
+  // フィルター更新で再描画しても、詳細地域の展開状態を維持する
+  const currentView = navStack[navStack.length - 1];
+  const openedLocsBeforeRender = collectLocExpandKeys();
+  if (openedLocsBeforeRender.size > 0) currentView.locExpandKeys = openedLocsBeforeRender;
+
   const q = currentFilter.q.toLowerCase();
   const filtered = allReports.filter(r => {
     // 業種未選択時は全業種を表示。1つ以上選択されている場合のみOR条件で絞り込み。
@@ -1765,15 +1811,17 @@ function renderShopArea(allReports) {
     return;
   }
 
-  const expandKeys = navStack[navStack.length - 1].expandKeys || new Set();
+  const expandKeys = currentView.expandKeys || new Set();
+  const locExpandKeys = currentView.locExpandKeys || new Set();
   let html = '';
 
   sortedLocs.forEach(([loc, shopMap]) => {
     const totalCnt = [...shopMap.values()].reduce((s, v) => s + v.length, 0);
-    html += `<div class="loc-section" data-loc="${escHtml(loc)}">
+    const locExpandedClass = locExpandKeys.has(loc) ? ' expanded' : '';
+    html += `<div class="loc-section${locExpandedClass}" data-loc="${escHtml(loc)}">
       <div class="loc-hd" data-loc-toggle="${escHtml(loc)}">
         <span class="loc-hd-main"><span class="loc-arrow">▶</span><span>${escHtml(loc)}</span></span>
-        <span class="loc-meta">${shopMap.size}店 / ${totalCnt}件</span>
+        <span class="loc-meta">${shopMap.size.toLocaleString()}店 / ${totalCnt.toLocaleString()}レポート</span>
       </div>
       <div class="shop-list">`;
     const sortedShops = [...shopMap.entries()].sort((a, b) => b[1].length - a[1].length);
@@ -1807,11 +1855,19 @@ function renderShopArea(allReports) {
   shopArea.innerHTML = html;
 
   shopArea.querySelectorAll('.loc-hd').forEach(el => {
-    el.addEventListener('click', () => el.closest('.loc-section')?.classList.toggle('expanded'));
+    el.addEventListener('click', () => {
+      const section = el.closest('.loc-section');
+      if (!section) return;
+      section.classList.toggle('expanded');
+      currentView.locExpandKeys = collectLocExpandKeys();
+    });
   });
 
   shopArea.querySelectorAll('.shop-hd').forEach(el => {
-    el.addEventListener('click', () => el.parentElement.classList.toggle('expanded'));
+    el.addEventListener('click', () => {
+      el.parentElement.classList.toggle('expanded');
+      currentView.expandKeys = collectExpandKeys();
+    });
   });
   shopArea.querySelectorAll('.report-item').forEach(el => {
     el.addEventListener('click', () => {
@@ -1854,14 +1910,7 @@ async function renderReport(params) {
       doc.querySelectorAll(sel).forEach(e => e.remove()));
     const body = doc.body ? doc.body.innerHTML : html;
 
-    c.innerHTML = `
-      <div class="report-view-hd">
-        <div class="report-view-title">${escHtml(params.title || 'レポート')}</div>
-        <div class="report-view-sub">${escHtml(params.year || '')}
-          <a href="${escHtml(params.href)}" target="_blank" rel="noopener" style="margin-left:8px;color:var(--primary);font-size:12px;">元ページ ↗</a>
-        </div>
-      </div>
-      <div class="report-body">${body}</div>`;
+    c.innerHTML = `<div class="report-body">${body}</div>`;
   } catch (e) {
     c.innerHTML = `
       <div class="report-view-hd">
@@ -2034,7 +2083,7 @@ document.getElementById('content').addEventListener('click', e => {
   if (/pinsalo\.info/i.test(href) && !/\.(jpe?g|png|gif|webp|css|js)(\?|$)/i.test(href)) {
     e.preventDefault();
     e.stopPropagation();
-    loadLegacyPage(href);
+    openLegacyPage(href, a.textContent.trim() || href.split('/').pop());
   }
 }, true);
 
@@ -2075,6 +2124,7 @@ document.getElementById('m-reload').onclick = async () => {
     navStack.length = 1;
     navStack[0].scrollY = 0;
     navStack[0].expandKeys = new Set();
+    navStack[0].locExpandKeys = new Set();
     renderCurrent();
     updateBackButton();
     setScrollTop(0);
