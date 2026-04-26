@@ -272,7 +272,6 @@
   .btype-badge.btype-エステ          { background: #10b981; }
   .btype-badge.btype-キャバ・セクキャバ { background: #14b8a6; }
   .btype-badge.btype-ストリップ      { background: #6366f1; }
-  .btype-badge.btype-新地            { background: #d946ef; }
   .btype-badge.btype-体験記          { background: #6b7280; }
   .btype-badge.btype-その他          { background: #94a3b8; }
   .btype-badge.btype-不明            { background: #cbd5e1; color: var(--text); }
@@ -691,7 +690,7 @@ function btypeFromUrl(url) {
   if (/^str/.test(code))  return 'ストリップ';
   if (/^est/.test(code))  return 'エステ';
   if (/^etc/.test(code))  return 'その他';
-  if (/^tyo/.test(code))  return '新地';
+  if (/^tyo/.test(code))  return '不明';
   if (/^sa/.test(code))   return 'ピンサロ';
   if (/^so/.test(code))   return 'ソープ';
   if (/^he/.test(code))   return 'ヘルス';
@@ -702,11 +701,11 @@ function btypeFromUrl(url) {
   if (/^s\d/.test(code))  return 'ソープ';
   if (/^d\d/.test(code))  return 'デリヘル';
   if (/^h\d/.test(code))  return 'ヘルス';
-  if (/^t\d/.test(code))  return '新地';
+  if (/^t\d/.test(code))  return '不明';
   return '不明';
 }
 
-const BTYPE_LIST = ['ピンサロ','ヘルス','ソープ','デリヘル','エステ','キャバ・セクキャバ','ストリップ','新地','体験記','その他','不明'];
+const BTYPE_LIST = ['ピンサロ','ヘルス','ソープ','デリヘル','エステ','キャバ・セクキャバ','ストリップ','体験記','その他','不明'];
 
 // ═══════════════════════════════════════════════════════════════════════
 // 4. CORS プロキシ
