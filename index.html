@@ -320,6 +320,15 @@
   .report-body td, .report-body th { border: 1px solid var(--border); padding: 4px 6px; font-size: 13px; }
   .report-body p { margin: 0.5em 0; }
 
+  /* ── レガシーページ ナビボタン（cf_only移植） ── */
+  .nav-btn-group { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .nav-btn-group a[data-nav-btn] { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.12s; }
+  .nav-btn-group a[data-nav-btn]::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 18px; font-weight: 300; }
+  .nav-btn-group a[data-nav-btn]:active { background: var(--accent-dim); color: var(--accent); }
+  .genre-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .genre-tab { padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: var(--bg); border: 1px solid var(--border); color: var(--muted); cursor: pointer; text-decoration: none; }
+  .genre-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
   /* ── エラー・リンク・空 ── */
   .error {
     color: #dc2626; padding: 12px; margin: 12px;
@@ -708,6 +717,499 @@ function btypeFromUrl(url) {
 const BTYPE_LIST = ['ピンサロ','ヘルス','ソープ','デリヘル','エステ','キャバ・セクキャバ','ストリップ','体験記','その他','不明'];
 
 // ═══════════════════════════════════════════════════════════════════════
+// 3-B. レガシーページ用データ構造（cf_only より移植）
+// ═══════════════════════════════════════════════════════════════════════
+const LEGACY_NAV_LABELS = {
+  'pink.htm':       'トップページ',
+  'today.htm':      '本日掲載',
+  'repo_e.htm':     '東日本',
+  'repo_w.htm':     '西日本',
+  'oversea.htm':    '海外',
+  'history.htm':    '更新履歴',
+  'historyall.htm': '全期間履歴',
+  'papers.htm':     '研究論文',
+  'pape_b.htm':     '医学・心理学',
+  'pape_d.htm':     'ぼったくり風俗',
+  'pape_a.htm':     '経営・経済学',
+  'pape_g.htm':     '業界動向調査',
+  'pape_c.htm':     '風俗関連法規',
+  'pape_h.htm':     'ノンセクション',
+  'pape_g_e.htm':   '東日本',
+  'pape_g_w.htm':   '西日本',
+  'kansen.htm':     '感染症',
+  'kensa.htm':      '性病検査',
+  'ed.htm':         'ED（勃起障害）',
+  'sinri.htm':      '心理学',
+  'b_etc.htm':      'その他（医学）',
+  'kaimuall.htm':   '会務報告',
+  'ranking.php':    'ランキング',
+  'bosyu.htm':      '会員募集',
+  'new_mmb.htm':    '人事異動',
+  'organ.htm':      '会員一覧',
+  'hokkai.htm':     '北海道',
+  'aomori.htm':     '青森',
+  'iwate.htm':      '岩手',
+  'tohoku.htm':     '東北',
+  'tochigi.htm':    '栃木',
+  'ibaragi.htm':    '茨城',
+  'gunma.htm':      '群馬',
+  'saitama.htm':    '埼玉',
+  'chiba.htm':      '千葉',
+  'tokio_n.htm':    '東京北部',
+  'tokio_c.htm':    '東京中央',
+  'tokio_s.htm':    '東京南部',
+  'tokio_w.htm':    '東京西部',
+  'kanagawa_e.htm': '神奈川東部',
+  'kanagawa_w.htm': '神奈川西部',
+  'koshinetsu.htm': '甲信越',
+  'hokuriku.htm':   '北陸',
+  'shizuoka.htm':   '静岡',
+  'tokai.htm':      '東海',
+  'aichi.htm':      '愛知',
+  'nagoya.htm':     '名古屋市内',
+  'owari.htm':      '尾張',
+  'mikawa.htm':     '三河',
+  'kinki.htm':      '近畿',
+  'kyoto.htm':      '京都',
+  'n_osaka.htm':    '大阪北部',
+  's_osaka.htm':    '大阪南部',
+  'hyogo.htm':      '兵庫',
+  'chugoku.htm':    '中国',
+  'shikoku.htm':    '四国',
+  'kyusyu_n.htm':   '九州北部',
+  'kyusyu_s.htm':   '九州南部',
+};
+
+const LEGACY_NAV_CATEGORY_DEFS = [
+  { label: 'レポート',  fnames: ['today.htm','history.htm','historyall.htm','repo_e.htm','repo_w.htm','oversea.htm'] },
+  { label: '研究・情報', fnames: ['papers.htm','pape_b.htm','pape_d.htm','pape_a.htm','pape_g.htm','pape_c.htm','pape_h.htm','ranking.php','kaimuall.htm'] },
+  { label: '組織・参加', fnames: ['bosyu.htm','new_mmb.htm','organ.htm'] },
+  { label: '地域',      fnames: [
+    'hokkai.htm','aomori.htm','iwate.htm','tohoku.htm',
+    'tochigi.htm','ibaragi.htm','gunma.htm','saitama.htm','chiba.htm',
+    'tokio_n.htm','tokio_c.htm','tokio_s.htm','tokio_w.htm',
+    'kanagawa_e.htm','kanagawa_w.htm','koshinetsu.htm',
+    'hokuriku.htm','shizuoka.htm','tokai.htm','aichi.htm',
+    'nagoya.htm','owari.htm','mikawa.htm',
+    'kinki.htm','kyoto.htm','n_osaka.htm','s_osaka.htm','hyogo.htm',
+    'chugoku.htm','shikoku.htm','kyusyu_n.htm','kyusyu_s.htm',
+  ]},
+];
+
+const LEGACY_PAGE_NAV_CONTROL = {
+  'organ.htm':    { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm', 'new_mmb.htm']) },
+  'new_mmb.htm':  { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm', 'new_mmb.htm']) },
+  'bosyu.htm':    { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm']) },
+  'papers.htm':   { hideFnames: new Set(['papers.htm']), renameLabels: new Map([['研究・情報', '論文カテゴリ']]) },
+  'pape_a.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
+  'pape_b.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']), renameLabels: new Map([['地区', 'カテゴリ']]) },
+  'pape_c.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
+  'pape_d.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
+  'pape_g.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']), renameLabels: new Map([['地区', 'カテゴリ']]) },
+  'pape_g_e.htm': { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_g.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'pape_g_w.htm': { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_g.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'pape_h.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
+  'kansen.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_b.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'kensa.htm':    { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_b.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'ed.htm':       { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_b.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'sinri.htm':    { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_b.htm']), hideGenreTabs: true, hideAreaGroup: true },
+  'b_etc.htm':    { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_b.htm']), hideGenreTabs: true, hideAreaGroup: true },
+};
+
+const LEGACY_PAGE_NAV_CHILD_CONTROL = {
+  'organ.htm': { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm', 'new_mmb.htm']) },
+};
+
+const LEGACY_GENRE_IMG_MAP = {
+  'derh.png':  'デリヘル',
+  'soap.png':  'ソープ',
+  'helt.png':  'ヘルス',
+  'psalo.png': 'ピンサロ',
+  'cab.png':   'キャバ',
+  'etc.png':   'その他',
+};
+
+const LEGACY_REGION_NAV_PAGES = new Set(['repo_e.htm','repo_w.htm']);
+const LEGACY_NAV_HOME_FNAME   = 'pink.htm';
+
+function legacyLabelFromImgSrc(img) {
+  const fname = (img.getAttribute('src') || '').split('/').pop();
+  let m = fname.match(/^R0*(\d+)\.png$/i);
+  if (m) return `令和${m[1]}年`;
+  m = fname.match(/^h(\d+)\.png$/i);
+  if (m) return `平成${m[1]}年`;
+  return '';
+}
+
+function legacyMergeNavControl(base, extra) {
+  if (!extra || Object.keys(extra).length === 0) return base;
+  const result = { ...base };
+  if (extra.hideCategories) result.hideCategories = new Set([...(base.hideCategories || []), ...extra.hideCategories]);
+  if (extra.hideLabels)     result.hideLabels     = new Set([...(base.hideLabels     || []), ...extra.hideLabels]);
+  if (extra.hideFnames)     result.hideFnames     = new Set([...(base.hideFnames     || []), ...extra.hideFnames]);
+  if (extra.hideGenreTabs)  result.hideGenreTabs  = true;
+  if (extra.hideAreaGroup)  result.hideAreaGroup  = true;
+  if (extra.renameLabels)   result.renameLabels   = new Map([...(base.renameLabels || new Map()), ...extra.renameLabels]);
+  return result;
+}
+
+function legacyReplaceImgButtons(doc, currentUrl = null) {
+  const currentFname = (currentUrl || '').split('/').pop().split('?')[0].toLowerCase();
+  const isRegionPage = LEGACY_REGION_NAV_PAGES.has(currentFname);
+  const prefFnames   = new Set(LEGACY_NAV_CATEGORY_DEFS.find(c => c.label === '地域')?.fnames || []);
+  const isPrefPage   = prefFnames.has(currentFname);
+  const navControl   = legacyMergeNavControl(
+    LEGACY_PAGE_NAV_CONTROL[currentFname] || {},
+    LEGACY_PAGE_NAV_CHILD_CONTROL[legacyNavFromFname] || {}
+  );
+
+  const navEntries = [];
+  const genreTabs  = [];
+
+  doc.querySelectorAll('a').forEach(a => {
+    if (a.textContent.trim()) return;
+    const img = a.querySelector('img');
+    if (!img) return;
+
+    const href = a.getAttribute('href') || '';
+    let label = '';
+    let finalHref = href;
+    let fname = '';
+    let isYear = false;
+
+    if (href.startsWith('mailto:')) {
+      const mParent = a.parentNode;
+      a.remove();
+      if (mParent && mParent !== doc.body && !mParent.textContent.trim() && mParent.children.length === 0) mParent.remove();
+      return;
+    } else {
+      const jtpMatch = href.match(/JavaScript:TP\(['"](.+?)['"]\)/i);
+      if (jtpMatch) finalHref = new URL(jtpMatch[1], 'https://pinsalo.info/sp/').href;
+      fname = finalHref.split('/').pop().split('?')[0];
+
+      const imgFname  = (img.getAttribute('src') || '').split('/').pop();
+      const yearLabel = legacyLabelFromImgSrc(img);
+      if (LEGACY_NAV_LABELS[fname]) {
+        label = LEGACY_NAV_LABELS[fname];
+      } else if (LEGACY_GENRE_IMG_MAP[imgFname]) {
+        if (!navControl.hideGenreTabs) {
+          genreTabs.push({ href: finalHref, label: LEGACY_GENRE_IMG_MAP[imgFname] });
+        }
+        const gParent = a.parentNode;
+        a.remove();
+        if (gParent && gParent !== doc.body && !gParent.textContent.trim() && gParent.children.length === 0) gParent.remove();
+        return;
+      } else if (yearLabel) {
+        label = yearLabel;
+        isYear = true;
+      } else {
+        label = img.getAttribute('alt') || '';
+      }
+    }
+
+    if (!label) return;
+
+    const btn = doc.createElement('a');
+    btn.setAttribute('href', finalHref);
+    btn.setAttribute('data-nav-btn', '');
+    btn.textContent = label;
+    navEntries.push({ btn, fname, isYear });
+
+    const parent = a.parentNode;
+    a.remove();
+    if (parent && parent !== doc.body && !parent.textContent.trim() && parent.children.length === 0) parent.remove();
+  });
+
+  doc.querySelectorAll('img').forEach(img => {
+    if (/pinsalo\.info\/img\//i.test(img.getAttribute('src') || '')) img.remove();
+  });
+
+  (function cleanEmpty(el) {
+    if (/\bbox[123]\b/.test(el.className)) return;
+    if (/^(br|hr|wbr)$/i.test(el.tagName)) return;
+    Array.from(el.children).forEach(cleanEmpty);
+    if (el === doc.body) return;
+    const text = (el.textContent || '').replace(/[\s 　]/g, '');
+    if (!text && !el.querySelector('a[href],img[src],input,select,textarea')) el.remove();
+  })(doc.body);
+
+  if (navEntries.length === 0 && genreTabs.length === 0) return;
+
+  const homeEntry = navEntries.find(e => e.fname === LEGACY_NAV_HOME_FNAME);
+  let homeGroup = null;
+  if (homeEntry) {
+    homeGroup = doc.createElement('div');
+    homeGroup.className = 'nav-btn-group';
+    homeGroup.appendChild(homeEntry.btn);
+    doc.body.insertBefore(homeGroup, doc.body.firstChild);
+  }
+
+  if (genreTabs.length > 0) {
+    const tabStrip = doc.createElement('div');
+    tabStrip.className = 'genre-tabs';
+    genreTabs.forEach(({ href, label }) => {
+      const tabFname = href.split('/').pop().split('?')[0].toLowerCase();
+      const tab = doc.createElement('a');
+      tab.setAttribute('href', href);
+      tab.setAttribute('data-nav-btn', '');
+      tab.className = 'genre-tab' + (tabFname === currentFname ? ' active' : '');
+      tab.textContent = label;
+      tabStrip.appendChild(tab);
+    });
+    const afterHome = homeGroup ? homeGroup.nextSibling : doc.body.firstChild;
+    doc.body.insertBefore(tabStrip, afterHome);
+  }
+
+  const catGroup = doc.createElement('div');
+  catGroup.className = 'nav-btn-group';
+  let hasCatBtns = false;
+
+  LEGACY_NAV_CATEGORY_DEFS.forEach(cat => {
+    if (navControl.hideCategories?.has(cat.label)) return;
+    const fnameSet = new Set(cat.fnames);
+    let catEntries;
+    if (cat.label === 'レポート') {
+      if (isPrefPage) return;
+      catEntries = navEntries.filter(e => fnameSet.has(e.fname) || e.isYear);
+      catEntries.sort((a, b) => {
+        const ai = a.isYear ? 999 : cat.fnames.indexOf(a.fname);
+        const bi = b.isYear ? 999 : cat.fnames.indexOf(b.fname);
+        return ai - bi;
+      });
+    } else {
+      catEntries = navEntries.filter(e => fnameSet.has(e.fname));
+    }
+    if (navControl.hideFnames) catEntries = catEntries.filter(e => !navControl.hideFnames.has(e.fname));
+    if (catEntries.length === 0) return;
+
+    const displayLabel = (cat.label === '地域' && isRegionPage) ? 'エリア（広域）'
+      : (navControl.renameLabels?.get(cat.label) ?? cat.label);
+
+    if (!navControl.hideLabels?.has(cat.label)) {
+      const header = doc.createElement('div');
+      header.className = 'nav-category-header';
+      header.textContent = displayLabel;
+      catGroup.appendChild(header);
+    }
+    catEntries.forEach(e => catGroup.appendChild(e.btn));
+    hasCatBtns = true;
+  });
+
+  const categorizedFnames = new Set([
+    LEGACY_NAV_HOME_FNAME,
+    ...LEGACY_NAV_CATEGORY_DEFS.flatMap(cat => cat.fnames),
+  ]);
+  const uncategorized = navEntries.filter(e => !categorizedFnames.has(e.fname) && !e.isYear);
+
+  let areaGroup = null;
+  if (uncategorized.length > 0 && !navControl.hideAreaGroup) {
+    areaGroup = doc.createElement('div');
+    areaGroup.className = 'nav-btn-group';
+    const areaHeader = doc.createElement('div');
+    areaHeader.className = 'nav-category-header';
+    areaHeader.textContent = isPrefPage ? 'エリア（詳細）'
+      : (navControl.renameLabels?.get('地区') ?? '地区');
+    areaGroup.appendChild(areaHeader);
+    uncategorized.forEach(e => areaGroup.appendChild(e.btn));
+  }
+
+  if (hasCatBtns || areaGroup) {
+    const isEmptyNode = n => {
+      if (n.nodeType === 3) return !n.textContent.replace(/[\s ]/g, '');
+      if (n.nodeType !== 1) return true;
+      const text = n.textContent.replace(/[\s ]/g, '');
+      return !text && !n.querySelector('a,img,input,button,select,textarea');
+    };
+    let cur = homeGroup ? homeGroup.nextSibling : doc.body.firstChild;
+    while (cur) {
+      const next = cur.nextSibling;
+      if (isEmptyNode(cur)) { cur.remove(); cur = next; }
+      else break;
+    }
+
+    let bodyText = '';
+    for (const child of doc.body.childNodes) {
+      if (child !== homeGroup) bodyText += (child.textContent || '').replace(/[\s ]/g, '');
+    }
+    if (bodyText.length > 10) {
+      if (areaGroup) doc.body.appendChild(areaGroup);
+      if (hasCatBtns) doc.body.appendChild(catGroup);
+    } else {
+      const insertBefore = homeGroup ? homeGroup.nextSibling : null;
+      if (areaGroup) doc.body.insertBefore(areaGroup, insertBefore);
+      if (hasCatBtns) doc.body.insertBefore(catGroup, areaGroup ? areaGroup.nextSibling : insertBefore);
+    }
+  }
+}
+
+// ── レガシーページ並列フェッチ（cf_only の fetchFast 相当）──────────────────
+async function fetchLegacy(url) {
+  const proxyUrl = `https://npk-proxy.npk-proxy.workers.dev/?url=${encodeURIComponent(url)}`;
+  dbgLegacy('fetchLegacy:start', { url, proxyUrl });
+  const started = performance.now();
+  const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(28000) });
+  dbgLegacy('fetchLegacy:response', { url, ok: res.ok, status: res.status, ms: Math.round(performance.now() - started) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const buf  = await res.arrayBuffer();
+  dbgLegacy('fetchLegacy:arrayBuffer', { url, bytes: buf.byteLength });
+  const utf8 = new TextDecoder('utf-8').decode(buf);
+  const m = utf8.match(/charset\s*=\s*["']?([^\s"';>]+)/i);
+  const declared = (m ? m[1].trim().toLowerCase() : 'utf-8');
+  dbgLegacy('fetchLegacy:charset', { url, declared, utf8Length: utf8.length, sample: utf8.slice(0, 120) });
+  if (declared.includes('shift') || declared.includes('sjis') || declared === 'x-sjis') {
+    try {
+      const sjis = new TextDecoder('shift-jis').decode(buf);
+      dbgLegacy('fetchLegacy:decoded', { url, encoding: 'shift-jis', length: sjis.length, sample: sjis.slice(0, 120) });
+      return sjis;
+    } catch (err) {
+      dbgLegacyError('fetchLegacy:shift-jis decode failed; fallback utf-8', err);
+      return utf8;
+    }
+  }
+  dbgLegacy('fetchLegacy:decoded', { url, encoding: 'utf-8', length: utf8.length });
+  return utf8;
+}
+
+// ── レガシーページ状態変数 ────────────────────────────────────────────────────
+let legacyCurrentUrl   = '';
+let legacyNavFromFname = null;
+const legacyHistoryStack = [];
+
+// ── DEBUG: レガシー遷移ログ ───────────────────────────────────────────────
+const DEBUG_LEGACY_NAV = true;
+function dbgLegacy(...args) {
+  if (!DEBUG_LEGACY_NAV) return;
+  const stamp = new Date().toISOString().slice(11, 23);
+  console.log(`[legacy-debug ${stamp}]`, ...args);
+}
+function dbgLegacyError(...args) {
+  if (!DEBUG_LEGACY_NAV) return;
+  const stamp = new Date().toISOString().slice(11, 23);
+  console.error(`[legacy-debug ${stamp}]`, ...args);
+}
+function showLegacyDebugMessage(message) {
+  const c = document.getElementById('content');
+  if (!c) return;
+  const box = document.createElement('div');
+  box.style.cssText = 'margin:10px;padding:10px;border:1px solid #f59e0b;border-radius:8px;background:#fffbeb;color:#92400e;font-size:12px;line-height:1.6;white-space:pre-wrap;';
+  box.textContent = `[DEBUG] ${message}`;
+  c.prepend(box);
+}
+
+function hideFilterDashboardSafe(reason = '') {
+  const fd = document.getElementById('filter-dashboard');
+  if (!fd) {
+    dbgLegacy('hideFilterDashboardSafe:skip #filter-dashboard not found', { reason });
+    return;
+  }
+  fd.classList.add('hidden');
+  dbgLegacy('hideFilterDashboardSafe:done', { reason });
+}
+
+function renderLegacy(html, url, restoreScroll = null) {
+  dbgLegacy('renderLegacy:start', { url, htmlLength: html?.length, restoreScroll });
+  const doc  = new DOMParser().parseFromString(html, 'text/html');
+  const base = new URL(url);
+  dbgLegacy('renderLegacy:parsed', { title: doc.title, links: doc.querySelectorAll('a[href]').length, imgs: doc.querySelectorAll('img').length });
+
+  doc.querySelectorAll('[src],[href]').forEach(el => {
+    const attr = el.hasAttribute('href') ? 'href' : 'src';
+    try { el.setAttribute(attr, new URL(el.getAttribute(attr), base).href); } catch {}
+  });
+
+  [
+    'script','noscript','iframe','object','embed','ins','ads',
+    '[src*="dtiserv"]','[href*="dtiserv"]',
+    '[src*="affiliate"]','[href*="affiliate"]',
+    '[src*="adserv"]','[href*="adserv"]',
+    '[href*="precious"]',
+  ].forEach(sel => doc.querySelectorAll(sel).forEach(e => e.remove()));
+
+  doc.querySelectorAll('[bgcolor]').forEach(el => el.removeAttribute('bgcolor'));
+  doc.querySelectorAll('[color="#000000"],[color="#000"],[color="black"]').forEach(el => el.removeAttribute('color'));
+
+  dbgLegacy('renderLegacy:before legacyReplaceImgButtons');
+  legacyReplaceImgButtons(doc, url);
+  dbgLegacy('renderLegacy:after legacyReplaceImgButtons', { bodyLength: (doc.body?.innerHTML || '').length });
+
+  const c = document.getElementById('content');
+  c.innerHTML = doc.body?.innerHTML ?? '';
+  dbgLegacy('renderLegacy:content injected', { childCount: c.children.length });
+  c.scrollTop = restoreScroll !== null ? restoreScroll : 0;
+
+  c.querySelectorAll('.nav-btn-group').forEach(group => {
+    const allBtns = group.querySelectorAll('a[data-nav-btn]');
+    const topBtns = Array.from(allBtns).filter(a => /pink\.htm/i.test(a.getAttribute('href') || ''));
+    if (topBtns.length > 0) {
+      if (allBtns.length === topBtns.length) group.remove();
+      else topBtns.forEach(a => a.remove());
+    }
+  });
+
+  c.querySelectorAll('.nav-btn-group').forEach(group => {
+    let node = group.nextSibling;
+    while (node) {
+      const next = node.nextSibling;
+      const text = (node.textContent || '').replace(/[\s ]/g, '');
+      const isEmpty = node.nodeType === 3
+        ? !text
+        : node.nodeType === 1 && !text && !node.querySelector('a,img,input,button,select');
+      if (isEmpty) { node.remove(); node = next; }
+      else break;
+    }
+  });
+}
+
+async function loadLegacyPage(url, push = true) {
+  dbgLegacy('loadLegacyPage:start', { url, push, legacyCurrentUrl, currentPageUrl });
+  if (!url) {
+    dbgLegacyError('loadLegacyPage:empty url');
+    return;
+  }
+  const c = document.getElementById('content');
+  if (!c) {
+    dbgLegacyError('loadLegacyPage:#content not found');
+    return;
+  }
+  if (push && legacyCurrentUrl && legacyCurrentUrl !== url) {
+    legacyHistoryStack.push({ url: legacyCurrentUrl, scrollTop: c.scrollTop });
+    dbgLegacy('loadLegacyPage:history push', legacyHistoryStack.at(-1));
+  }
+  legacyNavFromFname = legacyCurrentUrl
+    ? legacyCurrentUrl.split('/').pop().split('?')[0].toLowerCase() : null;
+  legacyCurrentUrl = url;
+  currentPageUrl   = url;
+  updateLegacyBackBtn();
+
+  const fname = url.split('/').pop().split('?')[0];
+  document.getElementById('page-title').textContent = LEGACY_NAV_LABELS[fname] || fname;
+
+  c.innerHTML = `<div class="loading"><div>${escHtml(LEGACY_NAV_LABELS[fname] || fname)} 読み込み中…</div></div>`;
+  hideFilterDashboardSafe('loadLegacyPage');
+  closeSidebar();
+
+  try {
+    dbgLegacy('loadLegacyPage:before fetchLegacy', { url });
+    const html = await fetchLegacy(url);
+    dbgLegacy('loadLegacyPage:after fetchLegacy', { url, htmlLength: html.length });
+    dbgLegacy('loadLegacyPage:before renderLegacy', { url });
+    renderLegacy(html, url);
+    dbgLegacy('loadLegacyPage:after renderLegacy', { url });
+  } catch (err) {
+    dbgLegacyError('loadLegacyPage:error', { url, name: err?.name, message: err?.message, stack: err?.stack });
+    c.innerHTML = `<div class="error">取得失敗: ${escHtml(err.message)}</div>
+      <a class="ext-link" href="${escHtml(url)}" target="_blank" rel="noopener">元ページを直接開く ↗</a>`;
+    showLegacyDebugMessage(`loadLegacyPage error\nurl: ${url}\n${err?.name || 'Error'}: ${err?.message || err}`);
+  }
+}
+
+function updateLegacyBackBtn() {
+  const btn = document.getElementById('b-back');
+  if (!btn) return;
+  btn.style.opacity = (legacyHistoryStack.length > 0 || navStack.length > 1) ? '1' : '0.35';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // 4. CORS プロキシ
 // ═══════════════════════════════════════════════════════════════════════
 const PROXIES = [
@@ -900,6 +1402,20 @@ function pushView(type, params) {
 }
 
 function goBack() {
+  // レガシーページ内の戻る
+  if (legacyHistoryStack.length > 0) {
+    const prev = legacyHistoryStack.pop();
+    loadLegacyPage(prev.url, false);
+    return;
+  }
+  // レガシーモードから v2 home へ戻る
+  if (legacyCurrentUrl) {
+    legacyCurrentUrl   = '';
+    legacyNavFromFname = null;
+    currentPageUrl     = '';
+    goHome();
+    return;
+  }
   if (navStack.length <= 1) return;
   navStack.pop();
   renderCurrent();
@@ -1115,7 +1631,10 @@ function appendNavSection(container, label, items) {
     const item = document.createElement('div');
     item.className = 'nav-btn-item';
     item.textContent = itemLabel;
-    item.onclick = () => pushView('page', { url, title: itemLabel });
+    item.onclick = () => {
+      dbgLegacy('appendNavSection:click', { section: label, item: itemLabel, url });
+      loadLegacyPage(url);
+    };
     section.appendChild(item);
   });
   container.appendChild(section);
@@ -1124,10 +1643,10 @@ function appendNavSection(container, label, items) {
 // ═══════════════════════════════════════════════════════════════════════
 // 11. 都道府県 / 国 / 年 フィルタービュー
 // ═══════════════════════════════════════════════════════════════════════
-let currentFilter = { btypes: new Set(), q: '' };
+let currentFilter = { btypes: new Set(), q: '' }; // btypesが空なら全業種表示
 
 function renderFilteredView(title, reports) {
-  currentFilter = { btypes: new Set(BTYPE_LIST), q: '' };
+  currentFilter = { btypes: new Set(), q: '' };
   currentPageUrl = '';
   document.getElementById('page-title').textContent = title;
 
@@ -1141,7 +1660,7 @@ function renderFilteredView(title, reports) {
     <div class="pref-view-title">${escHtml(title)}
       <span style="font-size:13px;color:var(--muted);font-weight:400">(${reports.length.toLocaleString()}件)</span>
     </div>
-    <div class="filter-card expanded" id="filter-card">
+    <div class="filter-card" id="filter-card">
       <div class="filter-toggle" id="filter-toggle">
         <span><span class="filter-arrow">▶</span> フィルター <span id="filter-cnt-label" style="color:var(--muted);font-size:12px;font-weight:400"></span></span>
         <span style="font-size:12px;color:var(--muted)">開閉</span>
@@ -1166,7 +1685,7 @@ function renderFilteredView(title, reports) {
   reports.forEach(r => { btypeCnt[r.btype] = (btypeCnt[r.btype] || 0) + 1; });
   BTYPE_LIST.filter(b => btypeCnt[b]).forEach(b => {
     const chip = document.createElement('span');
-    chip.className = 'btype-chip active';
+    chip.className = 'btype-chip';
     chip.dataset.btype = b;
     chip.innerHTML = `${escHtml(b)} <span class="chip-cnt">${btypeCnt[b]}</span>`;
     chip.addEventListener('click', () => {
@@ -1192,8 +1711,8 @@ function renderFilteredView(title, reports) {
   document.getElementById('filter-clear').addEventListener('click', () => {
     qInput.value = '';
     currentFilter.q = '';
-    document.querySelectorAll('.btype-chip').forEach(el => el.classList.add('active'));
-    currentFilter.btypes = new Set(BTYPE_LIST);
+    document.querySelectorAll('.btype-chip').forEach(el => el.classList.remove('active'));
+    currentFilter.btypes = new Set();
     renderShopArea(reports);
   });
 
@@ -1217,7 +1736,8 @@ function renderYearView(yearLabel) {
 function renderShopArea(allReports) {
   const q = currentFilter.q.toLowerCase();
   const filtered = allReports.filter(r => {
-    if (!currentFilter.btypes.has(r.btype)) return false;
+    // 業種未選択時は全業種を表示。1つ以上選択されている場合のみOR条件で絞り込み。
+    if (currentFilter.btypes.size > 0 && !currentFilter.btypes.has(r.btype)) return false;
     if (q && !(r.shop.toLowerCase().includes(q) || r.loc.toLowerCase().includes(q) || r.text.toLowerCase().includes(q))) return false;
     return true;
   });
@@ -1250,9 +1770,9 @@ function renderShopArea(allReports) {
 
   sortedLocs.forEach(([loc, shopMap]) => {
     const totalCnt = [...shopMap.values()].reduce((s, v) => s + v.length, 0);
-    html += `<div class="loc-section">
-      <div class="loc-hd">
-        <span>${escHtml(loc)}</span>
+    html += `<div class="loc-section" data-loc="${escHtml(loc)}">
+      <div class="loc-hd" data-loc-toggle="${escHtml(loc)}">
+        <span class="loc-hd-main"><span class="loc-arrow">▶</span><span>${escHtml(loc)}</span></span>
         <span class="loc-meta">${shopMap.size}店 / ${totalCnt}件</span>
       </div>
       <div class="shop-list">`;
@@ -1285,6 +1805,10 @@ function renderShopArea(allReports) {
   });
 
   shopArea.innerHTML = html;
+
+  shopArea.querySelectorAll('.loc-hd').forEach(el => {
+    el.addEventListener('click', () => el.closest('.loc-section')?.classList.toggle('expanded'));
+  });
 
   shopArea.querySelectorAll('.shop-hd').forEach(el => {
     el.addEventListener('click', () => el.parentElement.classList.toggle('expanded'));
@@ -1498,6 +2022,21 @@ document.getElementById('theme-toggle').onclick = () => {
 if (localStorage.getItem('pinsalo_v2_theme') === 'dark') {
   document.body.classList.add('dark');
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// 17-B. レガシーコンテンツ内リンク捕捉
+// ═══════════════════════════════════════════════════════════════════════
+document.getElementById('content').addEventListener('click', e => {
+  if (!legacyCurrentUrl) return;
+  const a = e.target.closest('a');
+  if (!a || !a.href) return;
+  const href = a.href;
+  if (/pinsalo\.info/i.test(href) && !/\.(jpe?g|png|gif|webp|css|js)(\?|$)/i.test(href)) {
+    e.preventDefault();
+    e.stopPropagation();
+    loadLegacyPage(href);
+  }
+}, true);
 
 // ═══════════════════════════════════════════════════════════════════════
 // 18. イベントバインド
