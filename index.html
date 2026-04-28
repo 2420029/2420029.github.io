@@ -852,7 +852,7 @@ const BODY2_BTYPE_MAP = [
   [/小料理/,                           '小料理'],
 ];
 
-function btypeFromBodyText(html) {
+function btypeFromTitleText(html) {
   if (!html) return null;
   // 旧アーカイブは <TITLE>ピンサロ「店名」（地域）</TITLE> の形式で業種が入っている。
   const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -1253,7 +1253,7 @@ let legacyNavFromFname = null;
 const legacyHistoryStack = [];
 
 // ── DEBUG: レガシー遷移ログ ───────────────────────────────────────────────
-const DEBUG_LEGACY_NAV = true;
+const DEBUG_LEGACY_NAV = false;
 function dbgLegacy(...args) {
   if (!DEBUG_LEGACY_NAV) return;
   const stamp = new Date().toISOString().slice(11, 23);
@@ -1781,7 +1781,7 @@ async function enrichUnknownBtypes() {
       const r = targets[idx++];
       try {
         const html = await fetchWithProxy(r.href);
-        const detected = btypeFromBodyText(html);
+        const detected = btypeFromTitleText(html);
         const nextBtype = detected ?? '不明';
 
         r.btype = nextBtype;
@@ -2895,6 +2895,16 @@ window.listOtherBtypes = function () {
   console.log('\n=== 「その他」内訳 ===');
   console.table(rows);
   return typeCnt;
+};
+
+// ─────────────────────────────────────────────────────────────────────
+// [診断ツール] clearAllCache() — キャッシュ全削除（再ロードが必要）
+// 使い方: コンソールで clearAllCache() を実行後、ページをリロード
+// ─────────────────────────────────────────────────────────────────────
+window.clearAllCache = function () {
+  localStorage.removeItem(CACHE_KEY);
+  localStorage.removeItem(BTYPE_ENRICH_KEY);
+  console.log('キャッシュを削除しました。ページをリロードしてください。');
 };
 
 // ═══════════════════════════════════════════════════════════════════════
