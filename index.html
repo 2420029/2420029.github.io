@@ -225,6 +225,13 @@
     background: var(--bg); user-select: none;
   }
   .btype-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btype-chip.disabled {
+    opacity: .42;
+    filter: grayscale(0.35);
+  }
+  .btype-chip.disabled:not(.active) {
+    pointer-events: none;
+  }
   .btype-chip .chip-cnt { font-size: 11px; opacity: .8; }
   .filter-input {
     flex: 1; min-width: 160px; height: 32px; padding: 0 10px;
@@ -1864,7 +1871,8 @@ async function fetchTodayReports(container) {
       item.onclick = () => pushView('report', { href, title: text, year: '' });
       container.appendChild(item);
     });
-  } catch {
+  } catch (e) {
+    console.warn('今日のレポート取得失敗:', e);
     hdr.textContent = '今日のレポート（取得失敗）';
   }
 }
@@ -1964,6 +1972,25 @@ function appendNavSection(container, label, items) {
 // ═══════════════════════════════════════════════════════════════════════
 let currentFilter = { region: '', prefs: new Set(), country: '', btypes: new Set(), q: '' }; // btypesが空なら全業種表示
 
+function createDefaultFilter() {
+  return { region: '', prefs: new Set(), country: '', btypes: new Set(), q: '' };
+}
+
+function cloneFilter(filter) {
+  return {
+    region: filter?.region || '',
+    prefs: new Set(filter?.prefs || []),
+    country: filter?.country || '',
+    btypes: new Set(filter?.btypes || []),
+    q: filter?.q || '',
+  };
+}
+
+function persistCurrentFilter() {
+  const view = navStack[navStack.length - 1];
+  if (view) view.filter = cloneFilter(currentFilter);
+}
+
 
 function getRegionNameByPref(pref) {
   const region = REGIONS.find(r => r.prefs.includes(pref));
@@ -2059,18 +2086,20 @@ function renderBtypeFilterChips(reports) {
   const btypeCnt = {};
   regionFiltered.forEach(r => { btypeCnt[r.btype] = (btypeCnt[r.btype] || 0) + 1; });
 
-  // 地域条件変更で0件になった業種は選択状態から外す
-  currentFilter.btypes = new Set([...currentFilter.btypes].filter(b => btypeCnt[b] > 0));
-
+  // 地域条件変更で0件になっても、ユーザーが選択した業種は勝手に外さない。
+  // 0件になった選択中チップは残して件数0を表示し、ユーザー操作で解除できるようにする。
   btypeBox.innerHTML = '';
-  BTYPE_LIST.filter(b => btypeCnt[b]).forEach(b => {
+  BTYPE_LIST.filter(b => btypeCnt[b] || currentFilter.btypes.has(b)).forEach(b => {
+    const count = btypeCnt[b] || 0;
+    const selected = currentFilter.btypes.has(b);
     const chip = document.createElement('span');
-    chip.className = 'btype-chip' + (currentFilter.btypes.has(b) ? ' active' : '');
+    chip.className = `btype-chip${selected ? ' active' : ''}${count === 0 ? ' disabled' : ''}`;
     chip.dataset.btype = b;
-    chip.innerHTML = `${escHtml(b)} <span class="chip-cnt">${btypeCnt[b].toLocaleString()}</span>`;
+    chip.innerHTML = `${escHtml(b)} <span class="chip-cnt">${count.toLocaleString()}</span>`;
     chip.addEventListener('click', () => {
       if (currentFilter.btypes.has(b)) currentFilter.btypes.delete(b);
-      else currentFilter.btypes.add(b);
+      else if (count > 0) currentFilter.btypes.add(b);
+      persistCurrentFilter();
       renderBtypeFilterChips(reports);
       renderShopArea(reports);
     });
@@ -2098,6 +2127,7 @@ function renderRegionFilterChips(reports) {
       currentFilter.region = currentFilter.region === selected ? '' : selected;
       currentFilter.prefs = new Set();
       currentFilter.country = '';
+      persistCurrentFilter();
       renderRegionFilterChips(reports);
       renderBtypeFilterChips(reports);
       renderShopArea(reports);
@@ -2120,6 +2150,7 @@ function renderRegionFilterChips(reports) {
       chip.addEventListener('click', () => {
         const selected = chip.dataset.country || '';
         currentFilter.country = currentFilter.country === selected ? '' : selected;
+        persistCurrentFilter();
         renderRegionFilterChips(reports);
         renderBtypeFilterChips(reports);
         renderShopArea(reports);
@@ -2136,6 +2167,7 @@ function renderRegionFilterChips(reports) {
         const selected = chip.dataset.pref || '';
         if (currentFilter.prefs.has(selected)) currentFilter.prefs.delete(selected);
         else currentFilter.prefs.add(selected);
+        persistCurrentFilter();
         renderRegionFilterChips(reports);
         renderBtypeFilterChips(reports);
         renderShopArea(reports);
@@ -2147,7 +2179,15 @@ function renderRegionFilterChips(reports) {
 
 function renderFilteredView(title, reports, options = {}) {
   const hideRegionFilter = !!options.hideRegionFilter;
-  currentFilter = { region: '', prefs: new Set(), country: '', btypes: new Set(), q: '' };
+  const currentView = navStack[navStack.length - 1];
+  currentFilter = cloneFilter(currentView?.filter || createDefaultFilter());
+  if (hideRegionFilter) {
+    // 都道府県ページなど、地域ブロックを表示しないビューでは非表示条件を残さない。
+    currentFilter.region = '';
+    currentFilter.prefs = new Set();
+    currentFilter.country = '';
+  }
+  persistCurrentFilter();
   currentPageUrl = '';
   document.getElementById('page-title').textContent = title;
 
@@ -2166,7 +2206,15 @@ function renderFilteredView(title, reports, options = {}) {
         <span><span class="filter-arrow">▶</span> フィルター <span id="filter-cnt-label" style="color:var(--muted);font-size:12px;font-weight:400"></span></span>
       </div>
       <div class="filter-body">
-        
+        ${hideRegionFilter ? '' : `
+        <div class="filter-row">
+          <span class="filter-label">地域</span>
+          <div id="filter-regions" style="display:flex;flex-wrap:wrap;gap:6px;flex:1"></div>
+        </div>
+        <div class="filter-row" id="filter-region-detail-row" style="display:none">
+          <span class="filter-label" id="filter-region-detail-label">都道府県</span>
+          <div id="filter-region-detail" style="display:flex;flex-wrap:wrap;gap:6px;flex:1"></div>
+        </div>`}
         <div class="filter-row">
           <span class="filter-label">業種</span>
           <div id="filter-btypes" style="display:flex;flex-wrap:wrap;gap:6px;flex:1"></div>
@@ -2192,8 +2240,10 @@ function renderFilteredView(title, reports, options = {}) {
   });
   // キーワード
   const qInput = document.getElementById('filter-q');
+  qInput.value = currentFilter.q || '';
   qInput.addEventListener('input', () => {
     currentFilter.q = qInput.value.trim();
+    persistCurrentFilter();
     renderShopArea(reports);
   });
   // クリア
@@ -2205,6 +2255,7 @@ function renderFilteredView(title, reports, options = {}) {
     currentFilter.country = '';
     document.querySelectorAll('.btype-chip').forEach(el => el.classList.remove('active'));
     currentFilter.btypes = new Set();
+    persistCurrentFilter();
     if (!hideRegionFilter) renderRegionFilterChips(reports);
     renderBtypeFilterChips(reports);
     renderShopArea(reports);
@@ -2270,8 +2321,10 @@ function renderShopArea(allReports) {
     return;
   }
 
+  const validLocKeys = new Set(sortedLocs.map(([loc]) => loc));
   const expandKeys = currentView.expandKeys || new Set();
-  const locExpandKeys = currentView.locExpandKeys || new Set();
+  currentView.locExpandKeys = new Set([...(currentView.locExpandKeys || new Set())].filter(k => validLocKeys.has(k)));
+  const locExpandKeys = currentView.locExpandKeys;
   let html = '';
 
   sortedLocs.forEach(([loc, shopMap]) => {
@@ -2287,7 +2340,7 @@ function renderShopArea(allReports) {
     sortedShops.forEach(([shop, reports]) => {
       const btypeCnt = {};
       reports.forEach(r => { btypeCnt[r.btype] = (btypeCnt[r.btype] || 0) + 1; });
-      const mainBtype = Object.entries(btypeCnt).sort((a, b) => b[1] - a[1])[0][0];
+      const mainBtype = Object.entries(btypeCnt).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '不明';
       const shopKey = `${loc}/${shop}`;
       const expandedClass = expandKeys.has(shopKey) ? ' expanded' : '';
       const sortedReports = reports.slice().sort((a, b) => yearKey(b.year) - yearKey(a.year));
@@ -2434,9 +2487,15 @@ function buildYearSidebar() {
   years.forEach(y => {
     const mR = y.match(/令和(\d+)/);
     const mH = y.match(/平成(\d+)/);
-    if (mR) reiwa.push({ year: y, n: parseInt(mR[1]) });
-    else if (mH && parseInt(mH[1]) >= 21) heiseiLate.push({ year: y, n: parseInt(mH[1]) });
-    else if (mH) heiseiEarly.push({ year: y, n: parseInt(mH[1]) });
+    if (mR) {
+      const n = parseInt(mR[1], 10);
+      if (!Number.isNaN(n)) reiwa.push({ year: y, n });
+    } else if (mH) {
+      const n = parseInt(mH[1], 10);
+      if (Number.isNaN(n)) return;
+      if (n >= 21) heiseiLate.push({ year: y, n });
+      else heiseiEarly.push({ year: y, n });
+    }
   });
 
   reiwa.sort((a, b) => b.n - a.n);
@@ -2449,10 +2508,12 @@ function buildYearSidebar() {
 }
 
 function buildYearGroup(containerId, label, items, fmtLabel) {
-  if (items.length === 0) return;
+  if (!Array.isArray(items) || items.length === 0) return;
   const container = document.getElementById(containerId);
+  if (!container) return;
   const first = items[items.length - 1];
   const last  = items[0];
+  if (!first || !last) return;
   const range = `(${fmtLabel(first)}-${fmtLabel(last)})`;
 
   const hdr = document.createElement('div');
