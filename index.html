@@ -501,6 +501,25 @@
   .org-legacy-card td, .org-legacy-card th { border: 1px solid var(--border); padding: 6px 8px; }
   .org-legacy-card img { max-width: 100%; height: auto; }
   .org-legacy-nav { padding: 0 12px 12px; }
+
+  /* ── 東京サブエリア ── */
+  .tokyo-subarea-section { border-bottom: 1px solid var(--border); }
+  .tokyo-subarea-hd {
+    display: flex; align-items: center; padding: 11px 18px;
+    font-size: var(--content-fs); font-weight: 700; cursor: pointer;
+    background: var(--bg); color: var(--text);
+    transition: background 0.12s;
+  }
+  .tokyo-subarea-hd:active { background: var(--accent-dim); color: var(--primary); }
+  .tokyo-subarea-name { flex: 1; }
+  .tokyo-subarea-hd::after {
+    content: '›'; color: var(--muted); font-size: 20px; font-weight: 300;
+    transition: transform 0.25s; display: inline-block; margin-left: 8px;
+  }
+  .tokyo-subarea-section.expanded .tokyo-subarea-hd::after { transform: rotate(90deg); }
+  .tokyo-subarea-section.expanded .tokyo-subarea-hd { background: var(--primary-light); }
+  .tokyo-subarea-body { display: none; }
+  .tokyo-subarea-section.expanded .tokyo-subarea-body { display: block; }
 </style>
 </head>
 <body>
@@ -586,12 +605,12 @@ const LOC_PREF = {
   '清瀬':'東京','東村山':'東京','田無':'東京','青砥':'東京','成増':'東京',
   '練馬':'東京','江古田':'東京','竹の塚':'東京','竹ノ塚':'東京','常盤台':'東京',
   '昭島':'東京','東大和':'東京','武蔵小金井':'東京','武蔵小山':'東京',
-  '武蔵新城':'東京','聖蹟桜ヶ丘':'東京','自由が丘':'東京','代々木':'東京',
+  '武蔵新城':'神奈川','聖蹟桜ヶ丘':'東京','自由が丘':'東京','代々木':'東京',
   '初台':'東京','幡ヶ谷':'東京','千歳烏山':'東京','下北沢':'東京',
   '阿佐ヶ谷':'東京','中野':'東京','要町':'東京','河辺':'東京','西新井':'東京',
   '足立':'東京','王子':'東京','有楽町':'東京','浜松町':'東京','銀座':'東京',
   '水道橋':'東京','四ツ谷':'東京','赤坂':'東京','麻布':'東京','恵比寿':'東京',
-  '中目黒':'東京','溝の口':'東京','上板橋':'東京','西八王子':'東京',
+  '中目黒':'東京','溝の口':'神奈川','上板橋':'東京','西八王子':'東京',
   '北品川':'東京','広尾':'東京','白金':'東京','葛西':'東京','青梅':'東京',
   '馬込沢':'東京','東小金井':'東京','西荻窪':'東京','柴崎':'東京',
   '大森':'東京','府中':'東京','駒込':'東京','新小岩':'東京','金町':'東京',
@@ -703,6 +722,55 @@ const LOC_PREF = {
   '沖縄市':'沖縄','宜野湾市':'沖縄','宮古島':'沖縄','石垣':'沖縄',
   '浦添':'沖縄','北中城':'沖縄','沖縄':'沖縄',
 };
+
+const TOKYO_SUBAREA = {
+  '池袋':'北','大塚':'北','鶯谷':'北','日暮里':'北','西日暮里':'北',
+  '上野':'北','御徒町':'北','浅草':'北','浅草橋':'北','田原町':'北','吉原':'北',
+  '巣鴨':'北','駒込':'北','要町':'北',
+  '赤羽':'北','王子':'北','東十条':'北','十条':'北',
+  '成増':'北','常盤台':'北','大山':'北','上板橋':'北',
+  '練馬':'北','江古田':'北','下井草':'北',
+  '町屋':'北',
+  '西新井':'北','足立':'北','竹の塚':'北','竹ノ塚':'北',
+  '北千住':'北','千住大橋':'北','足立区西部':'北','綾瀬':'北',
+  '亀有':'北','金町':'北','青砥':'北',
+  '新宿':'中央','高田馬場':'中央','大久保':'中央','新大久保':'中央',
+  '四ツ谷':'中央','曙橋':'中央','代々木':'中央','初台':'中央',
+  '神田':'中央','秋葉原':'中央','有楽町':'中央',
+  '銀座':'中央','八重洲':'中央',
+  '水道橋':'中央','湯島':'中央',
+  '新橋':'中央','浜松町':'中央','浜松町店':'中央','大門':'中央','田町':'中央',
+  '赤坂':'中央','六本木':'中央','麻布':'中央','青山':'中央',
+  '広尾':'中央','白金':'中央',
+  '両国':'中央','錦糸町':'中央',
+  '亀戸':'中央','東陽町':'中央','西大島':'中央',
+  '葛西':'中央','西葛西':'中央','小岩':'中央','新小岩':'中央','平井':'中央',
+  '品川':'南','北品川':'南','大崎':'南','五反田':'南','大井町':'南',
+  '目黒':'南','中目黒':'南','武蔵小山':'南',
+  '蒲田':'南','大森':'南','大田':'南','自由が丘':'南','馬込沢':'南',
+  '世田谷':'南',
+  '渋谷':'南','恵比寿':'南',
+  '町田':'南',
+  '幡ヶ谷':'西','笹塚':'西','下北沢':'西','千歳烏山':'西',
+  '中野':'西','東中野':'西',
+  '荻窪':'西','西荻窪':'西','阿佐ヶ谷':'西','高円寺':'西',
+  '吉祥寺':'西','東京都武蔵野市':'西',
+  '三鷹':'西',
+  '調布':'西','柴崎':'西',
+  '府中':'西','東府中':'西',
+  '立川':'西',
+  '国分寺':'西',
+  '武蔵小金井':'西','東小金井':'西',
+  '東大和':'西',
+  '昭島':'西','拝島':'西',
+  '福生':'西',
+  '青梅':'西','河辺':'西','小作':'西',
+  '多摩':'西','聖蹟桜ヶ丘':'西',
+  '八王子':'西','西八王子':'西',
+  '田無':'西','ひばりヶ丘':'西',
+  '清瀬':'西','東村山':'西','久米川':'西',
+};
+const TOKYO_SUBAREA_ORDER = ['北', '中央', '南', '西'];
 
 const SUBREGION_MAP = {}; // 将来用
 
@@ -1289,7 +1357,7 @@ let legacyNavFromFname = null;
 const legacyHistoryStack = [];
 
 // ── DEBUG: レガシー遷移ログ ───────────────────────────────────────────────
-const DEBUG_LEGACY_NAV = true;
+const DEBUG_LEGACY_NAV = false;
 function dbgLegacy(...args) {
   if (!DEBUG_LEGACY_NAV) return;
   const stamp = new Date().toISOString().slice(11, 23);
@@ -1858,6 +1926,34 @@ function normalizeReportBtypesFromUrl(reports) {
   return changed;
 }
 
+function normalizeReportLocationsFromMap(reports) {
+  if (!Array.isArray(reports)) return false;
+  let changed = false;
+  reports.forEach(r => {
+    if (!r?.loc) return;
+    const cls = classify(r.loc);
+    if (cls.isOverseas) {
+      if (!r.isOverseas || r.country !== cls.country || r.pref !== undefined || r.subregion !== undefined) {
+        r.isOverseas = true;
+        r.country = cls.country;
+        delete r.pref;
+        delete r.subregion;
+        changed = true;
+      }
+      return;
+    }
+
+    if (r.isOverseas || r.pref !== cls.pref || r.subregion !== cls.subregion || r.country !== undefined) {
+      r.isOverseas = false;
+      r.pref = cls.pref;
+      r.subregion = cls.subregion;
+      delete r.country;
+      changed = true;
+    }
+  });
+  return changed;
+}
+
 async function loadData(forceRefresh = false) {
   if (!forceRefresh) {
     try {
@@ -1866,7 +1962,9 @@ async function loadData(forceRefresh = false) {
         const cached = JSON.parse(raw);
         if (Date.now() - cached.ts < CACHE_TTL && Array.isArray(cached.reports)) {
           ALL_REPORTS = cached.reports;
-          if (normalizeReportBtypesFromUrl(ALL_REPORTS)) {
+          const changedLocation = normalizeReportLocationsFromMap(ALL_REPORTS);
+          const changedBtype = normalizeReportBtypesFromUrl(ALL_REPORTS);
+          if (changedLocation || changedBtype) {
             localStorage.setItem(CACHE_KEY, JSON.stringify({ ...cached, reports: ALL_REPORTS }));
           }
           return;
@@ -1951,6 +2049,7 @@ async function loadData(forceRefresh = false) {
   });
 
   ALL_REPORTS = reports;
+  normalizeReportLocationsFromMap(ALL_REPORTS);
 
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), reports }));
@@ -2090,14 +2189,15 @@ function setScrollTop(y) {
 // ═══════════════════════════════════════════════════════════════════════
 // 8. ナビゲーションスタック
 // ═══════════════════════════════════════════════════════════════════════
-const navStack = [{ type: 'home', params: {}, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set() }];
+const navStack = [{ type: 'home', params: {}, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set(), subareaExpandKeys: new Set() }];
 
 function pushView(type, params) {
   const cur = navStack[navStack.length - 1];
   cur.scrollY = getScrollTop();
   cur.expandKeys = collectExpandKeys();
   cur.locExpandKeys = collectLocExpandKeys();
-  navStack.push({ type, params, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set() });
+  cur.subareaExpandKeys = collectSubareaExpandKeys();
+  navStack.push({ type, params, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set(), subareaExpandKeys: new Set() });
   renderCurrent();
   setScrollTop(0);
   updateBackButton();
@@ -2109,6 +2209,7 @@ function goBack() {
   cur.scrollY = getScrollTop();
   cur.expandKeys = collectExpandKeys();
   cur.locExpandKeys = collectLocExpandKeys();
+  cur.subareaExpandKeys = collectSubareaExpandKeys();
 
   navStack.pop();
   const prev = navStack[navStack.length - 1];
@@ -2128,6 +2229,7 @@ function goHome() {
   navStack[0].scrollY = 0;
   navStack[0].expandKeys = new Set();
   navStack[0].locExpandKeys = new Set();
+  navStack[0].subareaExpandKeys = new Set();
   renderCurrent();
   setScrollTop(0);
   updateBackButton();
@@ -2154,6 +2256,14 @@ function collectLocExpandKeys() {
   return set;
 }
 
+function collectSubareaExpandKeys() {
+  const set = new Set();
+  document.querySelectorAll('.tokyo-subarea-section.expanded').forEach(el => {
+    if (el.dataset.subarea) set.add(el.dataset.subarea);
+  });
+  return set;
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // 9. メイン描画ディスパッチャ
 // ═══════════════════════════════════════════════════════════════════════
@@ -2171,7 +2281,13 @@ function renderCurrent() {
 
   switch (view.type) {
     case 'home':    renderHome();                              break;
-    case 'pref':    renderFilteredView(view.params.pref,  reportsByPref(view.params.pref), { hideRegionFilter: true });    break;
+    case 'pref':
+      renderFilteredView(view.params.pref, reportsByPref(view.params.pref), {
+        hideRegionFilter: true,
+        subareaMap: view.params.pref === '東京' ? TOKYO_SUBAREA : null,
+        subareaOrder: view.params.pref === '東京' ? TOKYO_SUBAREA_ORDER : null,
+      });
+      break;
     case 'country': renderFilteredView(view.params.country, reportsByCountry(view.params.country)); break;
     case 'year':    renderYearView(view.params.year);          break;
     case 'historyAll': renderHistoryAllView();                 break;
@@ -2484,7 +2600,7 @@ function applyRegionFilterOnly(reports) {
 }
 
 
-function renderBtypeFilterChips(reports) {
+function renderBtypeFilterChips(reports, shopAreaOptions = {}) {
   const btypeBox = document.getElementById('filter-btypes');
   if (!btypeBox) return;
 
@@ -2506,14 +2622,14 @@ function renderBtypeFilterChips(reports) {
       if (currentFilter.btypes.has(b)) currentFilter.btypes.delete(b);
       else if (count > 0) currentFilter.btypes.add(b);
       persistCurrentFilter();
-      renderBtypeFilterChips(reports);
-      renderShopArea(reports);
+      renderBtypeFilterChips(reports, shopAreaOptions);
+      renderShopArea(reports, shopAreaOptions);
     });
     btypeBox.appendChild(chip);
   });
 }
 
-function renderRegionFilterChips(reports) {
+function renderRegionFilterChips(reports, shopAreaOptions = {}) {
   const regionBox = document.getElementById('filter-regions');
   const detailRow = document.getElementById('filter-region-detail-row');
   const detailLabel = document.getElementById('filter-region-detail-label');
@@ -2534,9 +2650,9 @@ function renderRegionFilterChips(reports) {
       currentFilter.prefs = new Set();
       currentFilter.country = '';
       persistCurrentFilter();
-      renderRegionFilterChips(reports);
-      renderBtypeFilterChips(reports);
-      renderShopArea(reports);
+      renderRegionFilterChips(reports, shopAreaOptions);
+      renderBtypeFilterChips(reports, shopAreaOptions);
+      renderShopArea(reports, shopAreaOptions);
     });
   });
 
@@ -2557,9 +2673,9 @@ function renderRegionFilterChips(reports) {
         const selected = chip.dataset.country || '';
         currentFilter.country = currentFilter.country === selected ? '' : selected;
         persistCurrentFilter();
-        renderRegionFilterChips(reports);
-        renderBtypeFilterChips(reports);
-        renderShopArea(reports);
+        renderRegionFilterChips(reports, shopAreaOptions);
+        renderBtypeFilterChips(reports, shopAreaOptions);
+        renderShopArea(reports, shopAreaOptions);
       });
     });
   } else {
@@ -2574,9 +2690,9 @@ function renderRegionFilterChips(reports) {
         if (currentFilter.prefs.has(selected)) currentFilter.prefs.delete(selected);
         else currentFilter.prefs.add(selected);
         persistCurrentFilter();
-        renderRegionFilterChips(reports);
-        renderBtypeFilterChips(reports);
-        renderShopArea(reports);
+        renderRegionFilterChips(reports, shopAreaOptions);
+        renderBtypeFilterChips(reports, shopAreaOptions);
+        renderShopArea(reports, shopAreaOptions);
       });
     });
   }
@@ -2586,6 +2702,10 @@ function renderRegionFilterChips(reports) {
 function renderFilteredView(title, reports, options = {}) {
   const hideRegionFilter = !!options.hideRegionFilter;
   const hideTitleCount = options.hideTitleCount !== false;
+  const shopAreaOptions = {
+    subareaMap: options.subareaMap || null,
+    subareaOrder: options.subareaOrder || null,
+  };
   const currentView = navStack[navStack.length - 1];
   currentFilter = cloneFilter(currentView?.filter || createDefaultFilter());
   if (hideRegionFilter) {
@@ -2635,10 +2755,10 @@ function renderFilteredView(title, reports, options = {}) {
   c.appendChild(hd);
 
   // 地域チップ（都道府県ページでは非表示）
-  if (!hideRegionFilter) renderRegionFilterChips(reports);
+  if (!hideRegionFilter) renderRegionFilterChips(reports, shopAreaOptions);
 
   // 業種チップ（地域・都道府県・国フィルタに連動）
-  renderBtypeFilterChips(reports);
+  renderBtypeFilterChips(reports, shopAreaOptions);
 
   // フィルター開閉
   document.getElementById('filter-toggle').addEventListener('click', () => {
@@ -2653,7 +2773,7 @@ function renderFilteredView(title, reports, options = {}) {
   qInput.addEventListener('input', () => {
     currentFilter.q = qInput.value.trim();
     persistCurrentFilter();
-    renderShopArea(reports);
+    renderShopArea(reports, shopAreaOptions);
   });
   // クリア
   document.getElementById('filter-clear').addEventListener('click', () => {
@@ -2665,9 +2785,9 @@ function renderFilteredView(title, reports, options = {}) {
     document.querySelectorAll('.btype-chip').forEach(el => el.classList.remove('active'));
     currentFilter.btypes = new Set();
     persistCurrentFilter();
-    if (!hideRegionFilter) renderRegionFilterChips(reports);
-    renderBtypeFilterChips(reports);
-    renderShopArea(reports);
+    if (!hideRegionFilter) renderRegionFilterChips(reports, shopAreaOptions);
+    renderBtypeFilterChips(reports, shopAreaOptions);
+    renderShopArea(reports, shopAreaOptions);
   });
 
   // 店舗エリア
@@ -2678,7 +2798,7 @@ function renderFilteredView(title, reports, options = {}) {
   shopAreaWrap.appendChild(shopArea);
   c.appendChild(shopAreaWrap);
 
-  renderShopArea(reports);
+  renderShopArea(reports, shopAreaOptions);
 }
 
 function renderYearView(yearLabel) {
@@ -2693,50 +2813,8 @@ function renderHistoryAllView() {
   updateExtButton();
 }
 
-// ─ 店舗一覧描画 ─
-function renderShopArea(allReports) {
-  // フィルター更新で再描画しても、詳細地域の展開状態を維持する
-  const currentView = navStack[navStack.length - 1];
-  const openedLocsBeforeRender = collectLocExpandKeys();
-  if (openedLocsBeforeRender.size > 0) currentView.locExpandKeys = openedLocsBeforeRender;
-
-  const q = currentFilter.q.toLowerCase();
-  const filtered = applyRegionFilterOnly(allReports).filter(r => {
-    // 業種未選択時は全業種を表示。1つ以上選択されている場合のみOR条件で絞り込み。
-    if (currentFilter.btypes.size > 0 && !currentFilter.btypes.has(r.btype)) return false;
-    if (q && !(r.shop.toLowerCase().includes(q) || r.loc.toLowerCase().includes(q) || r.text.toLowerCase().includes(q))) return false;
-    return true;
-  });
-
-  const lbl = document.getElementById('filter-cnt-label');
-  if (lbl) lbl.textContent = `(${filtered.length.toLocaleString()}件 / ${allReports.length.toLocaleString()}件中)`;
-
-  const locMap = new Map();
-  filtered.forEach(r => {
-    if (!locMap.has(r.loc)) locMap.set(r.loc, new Map());
-    const m = locMap.get(r.loc);
-    if (!m.has(r.shop)) m.set(r.shop, []);
-    m.get(r.shop).push(r);
-  });
-
-  const sortedLocs = [...locMap.entries()].sort((a, b) => {
-    const aCnt = [...a[1].values()].reduce((s, v) => s + v.length, 0);
-    const bCnt = [...b[1].values()].reduce((s, v) => s + v.length, 0);
-    return bCnt - aCnt;
-  });
-
-  const shopArea = document.getElementById('shop-area');
-  if (sortedLocs.length === 0) {
-    shopArea.innerHTML = `<div class="empty">該当する店舗・レポートはありません</div>`;
-    return;
-  }
-
-  const validLocKeys = new Set(sortedLocs.map(([loc]) => loc));
-  const expandKeys = currentView.expandKeys || new Set();
-  currentView.locExpandKeys = new Set([...(currentView.locExpandKeys || new Set())].filter(k => validLocKeys.has(k)));
-  const locExpandKeys = currentView.locExpandKeys;
+function buildLocSectionsHtml(sortedLocs, expandKeys, locExpandKeys) {
   let html = '';
-
   sortedLocs.forEach(([loc, shopMap]) => {
     const totalCnt = [...shopMap.values()].reduce((s, v) => s + v.length, 0);
     const locExpandedClass = locExpandKeys.has(loc) ? ' expanded' : '';
@@ -2773,8 +2851,101 @@ function renderShopArea(allReports) {
     });
     html += `</div></div>`;
   });
+  return html;
+}
 
-  shopArea.innerHTML = html;
+// ─ 店舗一覧描画 ─
+function renderShopArea(allReports, options = {}) {
+  const subareaMap = options.subareaMap || null;
+  const subareaOrder = options.subareaOrder || null;
+  // フィルター更新で再描画しても、詳細地域の展開状態を維持する
+  const currentView = navStack[navStack.length - 1];
+  const openedLocsBeforeRender = collectLocExpandKeys();
+  if (openedLocsBeforeRender.size > 0) currentView.locExpandKeys = openedLocsBeforeRender;
+  const openedSubareasBeforeRender = collectSubareaExpandKeys();
+  if (openedSubareasBeforeRender.size > 0) currentView.subareaExpandKeys = openedSubareasBeforeRender;
+
+  const q = currentFilter.q.toLowerCase();
+  const filtered = applyRegionFilterOnly(allReports).filter(r => {
+    // 業種未選択時は全業種を表示。1つ以上選択されている場合のみOR条件で絞り込み。
+    if (currentFilter.btypes.size > 0 && !currentFilter.btypes.has(r.btype)) return false;
+    if (q && !(r.shop.toLowerCase().includes(q) || r.loc.toLowerCase().includes(q) || r.text.toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  const lbl = document.getElementById('filter-cnt-label');
+  if (lbl) lbl.textContent = `(${filtered.length.toLocaleString()}件 / ${allReports.length.toLocaleString()}件中)`;
+
+  const locMap = new Map();
+  filtered.forEach(r => {
+    if (!locMap.has(r.loc)) locMap.set(r.loc, new Map());
+    const m = locMap.get(r.loc);
+    if (!m.has(r.shop)) m.set(r.shop, []);
+    m.get(r.shop).push(r);
+  });
+
+  const sortedLocs = [...locMap.entries()].sort((a, b) => {
+    const aCnt = [...a[1].values()].reduce((s, v) => s + v.length, 0);
+    const bCnt = [...b[1].values()].reduce((s, v) => s + v.length, 0);
+    return bCnt - aCnt;
+  });
+
+  const shopArea = document.getElementById('shop-area');
+  if (sortedLocs.length === 0) {
+    shopArea.innerHTML = `<div class="empty">該当する店舗・レポートはありません</div>`;
+    return;
+  }
+
+  const validLocKeys = new Set(sortedLocs.map(([loc]) => loc));
+  const expandKeys = currentView.expandKeys || new Set();
+  currentView.locExpandKeys = new Set([...(currentView.locExpandKeys || new Set())].filter(k => validLocKeys.has(k)));
+  const locExpandKeys = currentView.locExpandKeys;
+  const validSubareaKeys = new Set();
+
+  if (subareaMap && subareaOrder) {
+    const subareaGroups = new Map(subareaOrder.map(k => [k, []]));
+    const unclassified = [];
+    sortedLocs.forEach(entry => {
+      const sub = subareaMap[entry[0]];
+      if (sub && subareaGroups.has(sub)) subareaGroups.get(sub).push(entry);
+      else unclassified.push(entry);
+    });
+
+    let html = '';
+    currentView.subareaExpandKeys = new Set([...(currentView.subareaExpandKeys || new Set())].filter(k => subareaGroups.has(k)));
+    const subareaExpandKeys = currentView.subareaExpandKeys;
+    subareaOrder.forEach(sub => {
+      const locs = subareaGroups.get(sub);
+      if (!locs || locs.length === 0) return;
+      validSubareaKeys.add(sub);
+      const subTotal = locs.reduce((s, [, shopMap]) =>
+        s + [...shopMap.values()].reduce((ss, v) => ss + v.length, 0), 0);
+      const isOpen = subareaExpandKeys.has(sub);
+      html += `<div class="tokyo-subarea-section${isOpen ? ' expanded' : ''}" data-subarea="${escHtml(sub)}">
+        <div class="tokyo-subarea-hd">
+          <span class="tokyo-subarea-name">東京${escHtml(sub)}</span>
+          <span class="loc-meta">${subTotal.toLocaleString()}件</span>
+        </div>
+        <div class="tokyo-subarea-body">`;
+      html += buildLocSectionsHtml(locs, expandKeys, locExpandKeys);
+      html += `</div></div>`;
+    });
+    currentView.subareaExpandKeys = new Set([...subareaExpandKeys].filter(k => validSubareaKeys.has(k)));
+    if (unclassified.length > 0) html += buildLocSectionsHtml(unclassified, expandKeys, locExpandKeys);
+    shopArea.innerHTML = html;
+  } else {
+    currentView.subareaExpandKeys = new Set();
+    shopArea.innerHTML = buildLocSectionsHtml(sortedLocs, expandKeys, locExpandKeys);
+  }
+
+  shopArea.querySelectorAll('.tokyo-subarea-hd').forEach(el => {
+    el.addEventListener('click', () => {
+      const section = el.closest('.tokyo-subarea-section');
+      if (!section) return;
+      section.classList.toggle('expanded');
+      currentView.subareaExpandKeys = collectSubareaExpandKeys();
+    });
+  });
 
   shopArea.querySelectorAll('.loc-hd').forEach(el => {
     el.addEventListener('click', () => {
@@ -3017,9 +3188,10 @@ function buildYearGroup(container, label, items, fmtLabel) {
   body.className = 'region-accordion-body';
 
   items.forEach(({ year }) => {
+    const count = ALL_REPORTS.filter(r => r.year === year).length;
     const el = document.createElement('div');
     el.className = 'region-pref-item';
-    el.innerHTML = `<span>${escHtml(year)}</span>`;
+    el.innerHTML = `<span>${escHtml(year)}</span><span class="pref-cnt">${count.toLocaleString()}件</span>`;
     el.onclick = () => pushView('year', { year });
     body.appendChild(el);
   });
@@ -3113,6 +3285,7 @@ document.getElementById('m-reload').onclick = async () => {
     navStack[0].scrollY = 0;
     navStack[0].expandKeys = new Set();
     navStack[0].locExpandKeys = new Set();
+    navStack[0].subareaExpandKeys = new Set();
     renderCurrent();
     updateBackButton();
     setScrollTop(0);
