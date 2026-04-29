@@ -140,7 +140,7 @@
 
   /* ── 都道府県ビュー フィルター ── */
   .pref-view-wrap { padding: 12px; }
-  .shop-area-wrap { padding-top: 0; }
+  .shop-area-wrap { padding-top: 0; padding-bottom: 0; }
   .pref-view-title {
     font-size: calc(var(--content-fs) + 1px); font-weight: 700;
     margin: 0 0 12px; text-align: center;
@@ -199,7 +199,7 @@
   .filter-btn:hover { opacity: .85; }
 
   /* ── 店舗リスト ── */
-  #shop-area { margin-top: 2px; }
+  #shop-area { margin-top: -8px; }
   .loc-section { margin: 0; }
   .loc-hd {
     font-size: var(--content-fs); font-weight: 500; padding: 9px 18px;
@@ -590,7 +590,8 @@ const LOC_PREF = {
   '大須観音':'愛知','大須':'愛知','丸の内':'愛知','尾張一宮':'愛知','小牧':'愛知',
   '半田':'愛知','稲沢':'愛知','弥富':'愛知','武豊':'愛知','常滑':'愛知',
   '東浦':'愛知','江南':'愛知','岩倉':'愛知','高蔵寺':'愛知','上社':'愛知',
-  '植田':'愛知','道徳':'愛知','共和':'愛知','堀田':'愛知','大和':'愛知',
+  '植田':'愛知','道徳':'愛知','共和':'愛知','堀田':'愛知',
+  '大和':'神奈川',
   '栄':'愛知','錦':'愛知','かんなみ街':'愛知','中村':'愛知','黒川':'愛知',
   '鶴舞':'愛知','上前津':'愛知','六番町':'愛知','木曽川':'愛知','岩塚':'愛知',
   '愛西':'愛知','藤が丘':'愛知','柴田':'愛知','新守山':'愛知','西春':'愛知',
@@ -1662,10 +1663,10 @@ async function loadData(forceRefresh = false) {
     if (!html) return;
     const yUrl   = yearPages[i].url;
     const yLabel = yearPages[i].label;
-    const tmp    = document.createElement('div');
-    tmp.innerHTML = html;
+    const tpl    = document.createElement('template');
+    tpl.innerHTML = html;
 
-    tmp.querySelectorAll('a[href]').forEach(a => {
+    tpl.content.querySelectorAll('a[href]').forEach(a => {
       const raw = a.getAttribute('href') || '';
       if (!raw || /^#|^javascript/i.test(raw)) return;
       let absUrl;
@@ -1702,7 +1703,12 @@ async function loadData(forceRefresh = false) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), reports }));
   } catch (e) {
-    console.warn('キャッシュ保存失敗:', e);
+    try {
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), reports }));
+    } catch (retryError) {
+      console.info('データ量が大きいためキャッシュ保存をスキップしました。次回起動時は再取得します。', retryError);
+    }
   }
 }
 
