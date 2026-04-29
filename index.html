@@ -30,6 +30,7 @@
     --primary: #60a5fa; --primary-light: rgba(96,165,250,0.12);
     --accent-dim: rgba(96,165,250,0.12);
     --header-bg: #0a1525;
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif;
   }
   body {
     font-family: 'Noto Sans JP', 'Helvetica Neue', Arial, 'Hiragino Sans', sans-serif;
@@ -55,7 +56,7 @@
   .header-icon-btn:active { color: #fff; background: rgba(255,255,255,0.1); }
   .header-icon-btn svg { width: 20px; height: 20px; stroke-width: 1.75; }
   .header-title {
-    flex: 1; font-weight: 700; color: #fff; text-align: center; font-size: 15px;
+    flex: 1; font-weight: 700; color: #fff; text-align: center; font-size: 17px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     padding: 0 4px; letter-spacing: 0.02em; cursor: pointer;
   }
@@ -79,26 +80,32 @@
   }
   .nav-btn {
     flex: 1; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 3px; color: var(--muted); font-size: 10px;
+    justify-content: center; gap: 3px; color: var(--muted); font-size: 12px;
     cursor: pointer; padding: 6px 0; transition: color 0.15s; user-select: none;
   }
   .nav-btn:active { color: var(--primary); }
-  .nav-btn svg { width: 18px; height: 18px; stroke-width: 1.75; }
-  .fs-icon { font-size: 17px; font-weight: 700; line-height: 1; font-family: 'Noto Sans JP', sans-serif; }
+  .nav-btn svg { width: 20px; height: 20px; stroke-width: 1.75; }
+  .fs-icon { font-size: 19px; font-weight: 700; line-height: 1; font-family: 'Noto Sans JP', sans-serif; }
   #b-back { transition: none; color: var(--muted) !important; opacity: 1 !important; }
   #b-back:active { color: var(--muted) !important; opacity: 1 !important; }
   #b-ext.ext-disabled { opacity: 0.38; }
 
   /* ── トップページ ナビ要素 ── */
   .nav-category-header {
-    padding: 10px 18px 4px; font-size: calc(var(--content-fs) - 2px); font-weight: 700; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px 4px; font-size: calc(var(--content-fs) - 2px); font-weight: 700; color: var(--muted);
     letter-spacing: 0.08em; background: var(--bg);
     border-top: 1px solid var(--border); text-transform: uppercase;
+  }
+  .nav-category-header .section-icon {
+    width: calc(var(--content-fs) + 1px); height: calc(var(--content-fs) + 1px);
+    stroke-width: 2.2; color: var(--primary); flex-shrink: 0;
   }
   .nav-section-wrap:first-child .nav-category-header { border-top: none; }
   .nav-btn-item {
     display: flex; align-items: center; padding: 13px 18px;
     border-bottom: 1px solid var(--border); font-size: var(--content-fs);
+    font-weight: 300;
     cursor: pointer; color: var(--text); background: var(--card);
     transition: background 0.12s;
   }
@@ -112,7 +119,7 @@
   .region-accordion { background: var(--card); border-bottom: 1px solid var(--border); }
   .region-accordion-toggle {
     display: flex; align-items: center; padding: 13px 18px;
-    font-size: var(--content-fs); font-weight: 500; color: var(--text);
+    font-size: var(--content-fs); font-weight: 300; color: var(--text);
     cursor: pointer; transition: background 0.12s; border-top: 1px solid var(--border);
   }
   .region-accordion-toggle::after {
@@ -131,7 +138,7 @@
   .region-pref-item {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 18px 10px 30px; border-top: 1px solid var(--border);
-    font-size: var(--content-fs); color: var(--text);
+    font-size: var(--content-fs); font-weight: 300; color: var(--text);
     cursor: pointer; background: var(--card); transition: background 0.12s;
   }
   .region-pref-item::after { content: '›'; color: var(--muted); font-size: 16px; font-weight: 300; }
@@ -202,7 +209,7 @@
   #shop-area { margin-top: -8px; }
   .loc-section { margin: 0; }
   .loc-hd {
-    font-size: var(--content-fs); font-weight: 500; padding: 9px 18px;
+    font-size: var(--content-fs); font-weight: 300; padding: 9px 18px;
     min-height: 52px;
     background: var(--bg); color: var(--text);
     border-bottom: 1px solid var(--border);
@@ -236,6 +243,7 @@
   .shop-hd {
     padding: 8px 12px; cursor: pointer;
     display: flex; align-items: center; gap: 8px; user-select: none;
+    font-weight: 300;
   }
   .shop-hd:active { background: var(--bg); }
   .shop-card.expanded .shop-hd { background: var(--primary-light); }
@@ -264,7 +272,7 @@
   .btype-badge.btype-体験記          { background: #6b7280; }
   .btype-badge.btype-その他          { background: #94a3b8; }
   .btype-badge.btype-不明            { background: #cbd5e1; color: var(--text); }
-  .shop-name { flex: 1; font-size: var(--content-fs); word-break: break-all; }
+  .shop-name { flex: 1; font-size: var(--content-fs); font-weight: 300; word-break: break-all; }
   .shop-cnt {
     font-size: calc(var(--content-fs) - 6px); color: var(--primary); font-weight: 700;
     background: var(--bg); padding: 2px 8px; border-radius: 12px;
@@ -283,7 +291,7 @@
   .report-item:active { background: var(--primary-light); }
   .report-item:last-child { border-bottom: 0; }
   .report-year { font-size: 11px; color: var(--muted); font-weight: 600; white-space: nowrap; padding-top: 1px; }
-  .report-text { font-size: calc(var(--content-fs) - 4px); word-break: break-all; line-height: 1.4; }
+  .report-text { font-size: calc(var(--content-fs) - 2px); word-break: break-all; line-height: 1.4; }
 
 
   /* ── 初回ロード画面ロゴ ── */
@@ -367,11 +375,11 @@
 
   /* ── レガシーページ ナビボタン（cf_only移植） ── */
   .nav-btn-group { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); background: var(--surface); }
-  .nav-btn-group a[data-nav-btn] { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font-size: var(--content-fs); font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.12s; }
+  .nav-btn-group a[data-nav-btn] { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font-size: var(--content-fs); font-weight: 300; cursor: pointer; text-decoration: none; transition: background 0.12s; }
   .nav-btn-group a[data-nav-btn]::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 18px; font-weight: 300; }
   .nav-btn-group a[data-nav-btn]:active { background: var(--accent-dim); color: var(--accent); }
   .genre-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border); }
-  .genre-tab { padding: 4px 12px; border-radius: 20px; font-size: calc(var(--content-fs) - 4px); font-weight: 500; background: var(--bg); border: 1px solid var(--border); color: var(--muted); cursor: pointer; text-decoration: none; }
+  .genre-tab { padding: 4px 12px; border-radius: 20px; font-size: calc(var(--content-fs) - 4px); font-weight: 300; background: var(--bg); border: 1px solid var(--border); color: var(--muted); cursor: pointer; text-decoration: none; }
   .genre-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
   #content .box1, #content .box2, #content .box3, #content p, #content td, #content th, #content li { font-size: var(--content-fs); }
   #content table { font-size: var(--content-fs); }
@@ -506,7 +514,7 @@
   .tokyo-subarea-section { border-bottom: 1px solid var(--border); }
   .tokyo-subarea-hd {
     display: flex; align-items: center; padding: 11px 18px;
-    font-size: var(--content-fs); font-weight: 700; cursor: pointer;
+    font-size: var(--content-fs); font-weight: 300; cursor: pointer;
     background: var(--bg); color: var(--text);
     transition: background 0.12s;
   }
@@ -2275,6 +2283,20 @@ function updateExtButton() {
   btn.classList.toggle('ext-disabled', !currentPageUrl);
 }
 
+const TOP_SECTION_ICONS = {
+  today: 'clipboard-list',
+  region: 'map-pin',
+  period: 'calendar-days',
+  research: 'book-open',
+  organization: 'users',
+};
+
+function setTopSectionHeader(el, iconName, text) {
+  if (!el) return;
+  el.innerHTML = `<i class="section-icon" data-lucide="${escHtml(iconName)}"></i><span>${escHtml(text)}</span>`;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
 function renderCurrent() {
   const view = navStack[navStack.length - 1];
   document.getElementById('page-title').textContent = '日ピン研 Viewer';
@@ -2316,7 +2338,7 @@ function renderHome() {
   todaySection.className = 'nav-section-wrap';
   const todayHdr = document.createElement('div');
   todayHdr.className = 'nav-category-header';
-  todayHdr.textContent = '今日のレポート（読み込み中…）';
+  setTopSectionHeader(todayHdr, TOP_SECTION_ICONS.today, '今日のレポート（読み込み中…）');
   todaySection.appendChild(todayHdr);
   c.appendChild(todaySection);
   fetchTodayReports(todaySection); // 非同期
@@ -2326,7 +2348,7 @@ function renderHome() {
   reportSection.className = 'nav-section-wrap';
   const reportHdr = document.createElement('div');
   reportHdr.className = 'nav-category-header';
-  reportHdr.textContent = 'レポート（地域別）';
+  setTopSectionHeader(reportHdr, TOP_SECTION_ICONS.region, 'レポート（地域別）');
   reportSection.appendChild(reportHdr);
 
   REGIONS.forEach(region => {
@@ -2344,7 +2366,7 @@ function renderHome() {
   periodSection.className = 'nav-section-wrap';
   const periodHdr = document.createElement('div');
   periodHdr.className = 'nav-category-header';
-  periodHdr.textContent = 'レポート（期間別）';
+  setTopSectionHeader(periodHdr, TOP_SECTION_ICONS.period, 'レポート（期間別）');
   periodSection.appendChild(periodHdr);
   buildPeriodSection(periodSection);
   c.appendChild(periodSection);
@@ -2353,7 +2375,7 @@ function renderHome() {
   appendNavSection(c, '研究・報告', [
     { label: '研究論文',   url: 'https://pinsalo.info/sp/papers.htm' },
     { label: '会務報告',   url: 'https://pinsalo.info/sp/kaimuall.htm' },
-  ]);
+  ], TOP_SECTION_ICONS.research);
 
   // ─ 組織・人事 ─
   appendNavSection(c, '組織・人事', [
@@ -2361,7 +2383,7 @@ function renderHome() {
     { label: 'ランキング', url: 'https://pinsalo.info/sp/ranking.php' },
     { label: '人事異動', url: 'https://pinsalo.info/sp/new_mmb.htm' },
     { label: '会員募集', url: 'https://pinsalo.info/sp/bosyu.htm' },
-  ]);
+  ], TOP_SECTION_ICONS.organization);
 }
 
 // ─ 今日のレポート取得（非同期）─
@@ -2384,7 +2406,7 @@ async function fetchTodayReports(container) {
       .filter(Boolean);
 
     const hdr = container.querySelector('.nav-category-header');
-    if (hdr) hdr.textContent = `今日のレポート（${todayReports.length}件）`;
+    if (hdr) setTopSectionHeader(hdr, TOP_SECTION_ICONS.today, `今日のレポート（${todayReports.length}件）`);
     todayReports.forEach(({ text, href }) => {
       const item = document.createElement('div');
       item.className = 'nav-btn-item';
@@ -2395,7 +2417,7 @@ async function fetchTodayReports(container) {
   } catch (e) {
     console.warn('今日のレポート取得失敗:', e);
     const hdr = container.querySelector('.nav-category-header');
-    if (hdr) hdr.textContent = '今日のレポート（取得失敗）';
+    if (hdr) setTopSectionHeader(hdr, TOP_SECTION_ICONS.today, '今日のレポート（取得失敗）');
   }
 }
 
@@ -2469,12 +2491,13 @@ function buildOverseasAccordionEl() {
 }
 
 // ─ ナビセクション（研究・情報 / 組織・参加）追加 ─
-function appendNavSection(container, label, items) {
+function appendNavSection(container, label, items, iconName = '') {
   const section = document.createElement('div');
   section.className = 'nav-section-wrap';
   const hdr = document.createElement('div');
   hdr.className = 'nav-category-header';
-  hdr.textContent = label;
+  if (iconName) setTopSectionHeader(hdr, iconName, label);
+  else hdr.textContent = label;
   section.appendChild(hdr);
   items.forEach(({ label: itemLabel, url }) => {
     const item = document.createElement('div');
