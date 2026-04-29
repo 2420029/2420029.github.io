@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>日ピン研ビューア v2</title>
+<title>日ピン研 Viewer</title>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -91,7 +91,7 @@
 
   /* ── トップページ ナビ要素 ── */
   .nav-category-header {
-    padding: 10px 18px 4px; font-size: 13px; font-weight: 700; color: var(--muted);
+    padding: 10px 18px 4px; font-size: calc(var(--content-fs) - 2px); font-weight: 700; color: var(--muted);
     letter-spacing: 0.08em; background: var(--bg);
     border-top: 1px solid var(--border); text-transform: uppercase;
   }
@@ -445,6 +445,58 @@
     line-height: 1.7; overflow-wrap: anywhere;
   }
   .org-legacy-card a { color: var(--primary); }
+  .org-legacy-card a.paper-list-item {
+    display: block; color: var(--text); text-decoration: none;
+    padding: 11px 0; border-bottom: 1px solid var(--border);
+  }
+  .org-legacy-card a.paper-list-item:first-of-type { padding-top: 0; }
+  .org-legacy-card a.paper-list-item:last-of-type { border-bottom: none; padding-bottom: 0; }
+  .paper-title {
+    display: block; font-size: var(--content-fs); font-weight: 600;
+    line-height: 1.45; overflow-wrap: anywhere;
+  }
+  .paper-author {
+    display: block; margin-top: 4px; color: var(--muted);
+    font-size: calc(var(--content-fs) - 4px); line-height: 1.35;
+  }
+  .org-legacy-card a.paper-list-item:active .paper-title { color: var(--primary); }
+  .ranking-list { display: flex; flex-direction: column; }
+  .ranking-pager {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--border);
+  }
+  .ranking-page-link {
+    display: inline-flex; align-items: center;
+    padding: 5px 10px; border: 1px solid var(--border);
+    border-radius: 16px; background: var(--bg); color: var(--text);
+    text-decoration: none; font-size: calc(var(--content-fs) - 5px);
+    font-weight: 700;
+  }
+  .ranking-page-link:active { background: var(--accent-dim); color: var(--primary); }
+  .ranking-group-title {
+    padding: 8px 0 6px; color: var(--muted);
+    font-size: calc(var(--content-fs) - 4px); font-weight: 700;
+  }
+  .ranking-group-title:not(:first-child) {
+    margin-top: 8px; border-top: 1px solid var(--border);
+  }
+  .ranking-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .ranking-item:last-child { border-bottom: none; }
+  .ranking-rank {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0; background: var(--primary-light); color: var(--primary);
+    font-size: calc(var(--content-fs) - 5px); font-weight: 700;
+  }
+  .ranking-main { flex: 1; min-width: 0; }
+  .ranking-name { font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+  .ranking-score {
+    color: var(--muted); font-size: calc(var(--content-fs) - 5px);
+    font-weight: 600; margin-top: 2px;
+  }
   .org-legacy-card table { width: 100%; max-width: 100%; border-collapse: collapse; }
   .org-legacy-card td, .org-legacy-card th { border: 1px solid var(--border); padding: 6px 8px; }
   .org-legacy-card img { max-width: 100%; height: auto; }
@@ -673,8 +725,7 @@ const REGIONS = [
   { name:'関東',         prefs:['茨城','栃木','群馬','埼玉','千葉','東京','神奈川'] },
   { name:'中部',         prefs:['新潟','富山','石川','福井','山梨','長野','岐阜','静岡','愛知'] },
   { name:'近畿',         prefs:['三重','滋賀','京都','大阪','兵庫','奈良','和歌山'] },
-  { name:'中国',         prefs:['鳥取','島根','岡山','広島','山口'] },
-  { name:'四国',         prefs:['徳島','香川','愛媛','高知'] },
+  { name:'中国・四国',   prefs:['鳥取','島根','岡山','広島','山口','徳島','香川','愛媛','高知'] },
   { name:'九州・沖縄',   prefs:['福岡','佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄'] },
 ];
 
@@ -932,12 +983,12 @@ const LEGACY_PAGE_NAV_CONTROL = {
   'organ.htm':    { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm', 'new_mmb.htm']) },
   'new_mmb.htm':  { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm', 'new_mmb.htm']) },
   'bosyu.htm':    { hideLabels: new Set(['組織・参加']), hideFnames: new Set(['organ.htm']) },
-  'papers.htm':   { hideFnames: new Set(['papers.htm']), renameLabels: new Map([['研究・情報', '論文カテゴリ']]) },
+  'papers.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
   'pape_a.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
-  'pape_b.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']), renameLabels: new Map([['地区', 'カテゴリ']]) },
+  'pape_b.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']), renameLabels: new Map([['地区', 'カテゴリ']]), hideAreaLabel: true },
   'pape_c.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
   'pape_d.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
-  'pape_g.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']), renameLabels: new Map([['地区', 'カテゴリ']]) },
+  'pape_g.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']), renameLabels: new Map([['地区', 'カテゴリ']]), hideAreaLabel: true },
   'pape_g_e.htm': { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_g.htm']), hideGenreTabs: true, hideAreaGroup: true },
   'pape_g_w.htm': { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm', 'pape_g.htm']), hideGenreTabs: true, hideAreaGroup: true },
   'pape_h.htm':   { hideLabels: new Set(['研究・情報']), hideFnames: new Set(['papers.htm']) },
@@ -981,6 +1032,7 @@ function legacyMergeNavControl(base, extra) {
   if (extra.hideFnames)     result.hideFnames     = new Set([...(base.hideFnames     || []), ...extra.hideFnames]);
   if (extra.hideGenreTabs)  result.hideGenreTabs  = true;
   if (extra.hideAreaGroup)  result.hideAreaGroup  = true;
+  if (extra.hideAreaLabel)  result.hideAreaLabel  = true;
   if (extra.renameLabels)   result.renameLabels   = new Map([...(base.renameLabels || new Map()), ...extra.renameLabels]);
   return result;
 }
@@ -1137,11 +1189,13 @@ function legacyReplaceImgButtons(doc, currentUrl = null) {
   if (uncategorized.length > 0 && !navControl.hideAreaGroup) {
     areaGroup = doc.createElement('div');
     areaGroup.className = 'nav-btn-group';
-    const areaHeader = doc.createElement('div');
-    areaHeader.className = 'nav-category-header';
-    areaHeader.textContent = isPrefPage ? 'エリア（詳細）'
-      : (navControl.renameLabels?.get('地区') ?? '地区');
-    areaGroup.appendChild(areaHeader);
+    if (!navControl.hideAreaLabel) {
+      const areaHeader = doc.createElement('div');
+      areaHeader.className = 'nav-category-header';
+      areaHeader.textContent = isPrefPage ? 'エリア（詳細）'
+        : (navControl.renameLabels?.get('地区') ?? '地区');
+      areaGroup.appendChild(areaHeader);
+    }
     uncategorized.forEach(e => areaGroup.appendChild(e.btn));
   }
 
@@ -1301,6 +1355,189 @@ function detectLegacyCardCategory(currentUrl) {
   return null;
 }
 
+function normalizeResearchPaperAuthorLines(container) {
+  if (!container) return;
+
+  const nextMeaningfulSibling = node => {
+    let current = node?.nextSibling || null;
+    while (current && current.nodeType === 3 && !current.textContent.trim()) {
+      current = current.nextSibling;
+    }
+    return current;
+  };
+
+  container.querySelectorAll('a[href]').forEach(link => {
+    link.querySelectorAll('br').forEach(br => {
+      const afterText = [];
+      let current = br.nextSibling;
+      while (current) {
+        afterText.push(current.textContent || '');
+        current = current.nextSibling;
+      }
+      const authorText = afterText.join('').trim();
+      if (authorText && /氏$/.test(authorText) && authorText.length <= 40) {
+        br.replaceWith(document.createTextNode('　'));
+      }
+    });
+
+    const br = nextMeaningfulSibling(link);
+    if (!br || br.nodeType !== 1 || br.tagName.toLowerCase() !== 'br') return;
+
+    const authorNode = nextMeaningfulSibling(br);
+    const authorText = (authorNode?.textContent || '').trim();
+    if (!authorText || !/氏$/.test(authorText) || authorText.length > 40) return;
+
+    br.replaceWith(document.createTextNode('　'));
+  });
+}
+
+function formatResearchPaperListLinks(container) {
+  if (!container) return;
+
+  container.querySelectorAll('.org-legacy-card a[href]').forEach(link => {
+    if (link.matches('[data-nav-btn], .genre-tab, .paper-list-item')) return;
+
+    const rawText = (link.textContent || '').replace(/\s+/g, ' ').trim();
+    if (!rawText) return;
+
+    const authorMatch = rawText.match(/^(.+?)[ 　]+([^ 　]{1,40}氏)$/);
+    const title = authorMatch ? authorMatch[1].trim() : rawText;
+    const author = authorMatch ? authorMatch[2].trim() : '';
+    if (!title) return;
+
+    link.classList.add('paper-list-item');
+    link.textContent = '';
+
+    const titleEl = document.createElement('span');
+    titleEl.className = 'paper-title';
+    titleEl.textContent = title;
+    link.appendChild(titleEl);
+
+    if (author) {
+      const authorEl = document.createElement('span');
+      authorEl.className = 'paper-author';
+      authorEl.textContent = author;
+      link.appendChild(authorEl);
+    }
+  });
+
+  container.querySelectorAll('.org-legacy-card').forEach(card => {
+    const firstItem = card.querySelector('a.paper-list-item');
+    if (!firstItem) return;
+
+    const removable = [];
+    let node = card.firstChild;
+    while (node && node !== firstItem) {
+      const next = node.nextSibling;
+      const text = (node.textContent || '').replace(/[\s 　]/g, '');
+      const isPlainHeading = node.nodeType === 3
+        || (node.nodeType === 1 && !node.querySelector('a[href],img,table,input,button,select,textarea'));
+      if (isPlainHeading && text.length <= 30) removable.push(node);
+      node = next;
+    }
+
+    removable.forEach(node => node.remove());
+  });
+}
+
+function collectRankingPagerLinks(container) {
+  const links = [];
+  const seen = new Set();
+
+  container.querySelectorAll('.org-legacy-card a[href]').forEach(a => {
+    const href = a.href || a.getAttribute('href') || '';
+    const raw = (a.textContent || '').replace(/\s+/g, '').trim();
+    if (!href) return;
+
+    let start = 0;
+    let end = 0;
+    let m = raw.match(/(\d{1,5})[－ー\-〜～~](\d{1,5})/);
+    if (m) {
+      start = Number(m[1]);
+      end = Number(m[2]);
+    } else {
+      m = raw.match(/^[－ー\-](\d{2,5})$/);
+      if (m) {
+        end = Number(m[1]);
+        start = end - 99;
+      }
+    }
+
+    if (!start || !end || start < 1 || end < start) return;
+    const key = `${start}-${end}:${href}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    links.push({ href, start, end, label: `${start}-${end}位` });
+  });
+
+  links.sort((a, b) => a.start - b.start);
+  return links;
+}
+
+function formatRankingPage(container) {
+  if (!container) return;
+
+  const pagerLinks = collectRankingPagerLinks(container);
+  let pagerRendered = false;
+
+  container.querySelectorAll('.org-legacy-card').forEach(card => {
+    const text = (card.textContent || '').replace(/\u00a0/g, ' ');
+    const entries = [];
+    const re = /(\d+)\s*[\.．]\s*([^（()\n\r]{1,60}?氏)\s*[（(]\s*(\d{1,6})\s*[）)]/g;
+    let match;
+    while ((match = re.exec(text)) !== null) {
+      entries.push({
+        rank: match[1],
+        name: match[2].replace(/\s+/g, ' ').trim(),
+        score: Number(match[3]),
+      });
+    }
+    if (entries.length < 3) return;
+
+    const list = document.createElement('div');
+    list.className = 'ranking-list';
+    if (!pagerRendered && pagerLinks.length > 0) {
+      pagerRendered = true;
+      const pager = document.createElement('div');
+      pager.className = 'ranking-pager';
+      pagerLinks.forEach(link => {
+        const a = document.createElement('a');
+        a.className = 'ranking-page-link';
+        a.href = link.href;
+        a.textContent = link.label;
+        pager.appendChild(a);
+      });
+      list.appendChild(pager);
+    }
+
+    let currentGroupStart = null;
+    entries.forEach(entry => {
+      const rankNum = Number(entry.rank);
+      const groupStart = Math.floor((rankNum - 1) / 100) * 100 + 1;
+      if (groupStart !== currentGroupStart) {
+        currentGroupStart = groupStart;
+        const groupTitle = document.createElement('div');
+        groupTitle.className = 'ranking-group-title';
+        groupTitle.textContent = `${groupStart}-${groupStart + 99}位`;
+        list.appendChild(groupTitle);
+      }
+
+      const item = document.createElement('div');
+      item.className = 'ranking-item';
+      item.innerHTML = `
+        <span class="ranking-rank">${escHtml(entry.rank)}</span>
+        <span class="ranking-main">
+          <span class="ranking-name">${escHtml(entry.name)}</span>
+          <span class="ranking-score">${entry.score.toLocaleString()} pt</span>
+        </span>`;
+      list.appendChild(item);
+    });
+
+    card.innerHTML = '';
+    card.appendChild(list);
+  });
+}
+
 function enhanceOrganizationLegacyPage(container, currentUrl, title) {
   const fname = legacyFnameFromUrl(currentUrl);
   const cardCategory = detectLegacyCardCategory(currentUrl);
@@ -1374,6 +1611,10 @@ function enhanceOrganizationLegacyPage(container, currentUrl, title) {
   const fallbackCategory = cardCategory || 'ページ';
   const meta = pageMeta[fname] || { title: title || fallbackCategory, sub: `${fallbackCategory}カテゴリ配下の内容をカード形式に整えて表示しています。` };
 
+  if (cardCategory === '研究・情報') {
+    normalizeResearchPaperAuthorLines(container);
+  }
+
   const isNavNode = node => node.nodeType === 1 && node.matches('.nav-btn-group,.genre-tabs');
   const hasUsefulContent = node => {
     if (node.nodeType === 3) return !!node.textContent.replace(/[\s 　]/g, '');
@@ -1430,6 +1671,12 @@ function enhanceOrganizationLegacyPage(container, currentUrl, title) {
   container.innerHTML = '';
   container.appendChild(wrap);
   if (navWrap.childNodes.length > 0) container.appendChild(navWrap);
+  if (cardCategory === '研究・情報') {
+    formatResearchPaperListLinks(container);
+  }
+  if (fname === 'ranking.php' || fname === 'ranking.htm') {
+    formatRankingPage(container);
+  }
   container.dataset.orgEnhanced = '1';
   container.dataset.orgEnhancedUrl = enhancedKey;
 }
@@ -1459,6 +1706,11 @@ function renderLegacy(html, url, restoreScroll = null) {
   dbgLegacy('renderLegacy:before legacyReplaceImgButtons');
   legacyReplaceImgButtons(doc, url);
   dbgLegacy('renderLegacy:after legacyReplaceImgButtons', { bodyLength: (doc.body?.innerHTML || '').length });
+  try {
+    postProcessReportDoc(doc);
+  } catch (postProcessError) {
+    console.warn('レガシーページ後処理失敗:', postProcessError);
+  }
 
   const c = document.getElementById('content');
   delete c.dataset.orgEnhanced;
