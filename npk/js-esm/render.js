@@ -51,6 +51,12 @@ function renderHome() {
   const c = document.getElementById('content');
   c.innerHTML = '';
 
+  // ─ バナー ─
+  const banner = document.createElement('div');
+  banner.className = 'home-banner';
+  banner.innerHTML = '<img src="./ad.png" alt="" class="home-banner-img">';
+  c.appendChild(banner);
+
   // ─ 今日のレポート ─
   const todaySection = document.createElement('div');
   todaySection.className = 'nav-section-wrap';
