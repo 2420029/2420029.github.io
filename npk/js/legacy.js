@@ -117,6 +117,7 @@ const LEGACY_REGION_NAV_PAGES = new Set(['repo_e.htm','repo_w.htm']);
 const LEGACY_NAV_HOME_FNAME   = 'pink.htm';
 
 function legacyLabelFromImgSrc(img) {
+  if (!img) return '';
   const fname = (img.getAttribute('src') || '').split('/').pop();
   let m = fname.match(/^R0*(\d+)\.png$/i);
   if (m) return `令和${m[1]}年`;
