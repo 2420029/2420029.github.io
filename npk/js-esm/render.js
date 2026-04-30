@@ -152,6 +152,7 @@ async function fetchTodayReports(container) {
 
 // ─ 地域アコーディオン要素生成 ─
 function buildRegionAccordionEl(region, prefCnt) {
+  const key = `region:${region.name}`;
   const total = region.prefs.reduce((s, p) => s + (prefCnt[p] || 0), 0);
   const wrap = document.createElement('div');
   wrap.className = 'region-accordion';
@@ -173,10 +174,8 @@ function buildRegionAccordionEl(region, prefCnt) {
     body.appendChild(item);
   });
 
-  toggle.onclick = () => {
-    toggle.classList.toggle('open');
-    body.classList.toggle('open');
-  };
+  toggle.onclick = () => setHomeAccordionState(key, !isHomeAccordionOpen(key), toggle, body);
+  setHomeAccordionState(key, isHomeAccordionOpen(key), toggle, body);
 
   wrap.appendChild(toggle);
   wrap.appendChild(body);
@@ -185,6 +184,7 @@ function buildRegionAccordionEl(region, prefCnt) {
 
 // ─ 海外アコーディオン要素生成 ─
 function buildOverseasAccordionEl() {
+  const key = 'region:overseas';
   const countryCnt = {};
   ALL_REPORTS.filter(r => r.isOverseas).forEach(r => {
     countryCnt[r.country] = (countryCnt[r.country] || 0) + 1;
@@ -209,21 +209,36 @@ function buildOverseasAccordionEl() {
     body.appendChild(item);
   });
 
-  toggle.onclick = () => {
-    toggle.classList.toggle('open');
-    body.classList.toggle('open');
-  };
+  toggle.onclick = () => setHomeAccordionState(key, !isHomeAccordionOpen(key), toggle, body);
+  setHomeAccordionState(key, isHomeAccordionOpen(key), toggle, body);
 
   wrap.appendChild(toggle);
   wrap.appendChild(body);
   return wrap;
 }
 
+function getHomeAccordionKeys() {
+  const view = navStack[navStack.length - 1];
+  if (!view || view.type !== 'home') return _homeAccordionOpen;
+  if (!(view.homeAccordionKeys instanceof Set)) view.homeAccordionKeys = new Set();
+  return view.homeAccordionKeys;
+}
+
+function isHomeAccordionOpen(key) {
+  return getHomeAccordionKeys().has(key);
+}
+
 function setHomeAccordionState(key, open, toggle, body) {
   toggle.classList.toggle('open', open);
   body.classList.toggle('open', open);
-  if (open) _homeAccordionOpen.add(key);
-  else _homeAccordionOpen.delete(key);
+  const keys = getHomeAccordionKeys();
+  if (open) {
+    keys.add(key);
+    _homeAccordionOpen.add(key);
+  } else {
+    keys.delete(key);
+    _homeAccordionOpen.delete(key);
+  }
 }
 
 function buildPapersAccordionEl() {
@@ -246,8 +261,8 @@ function buildPapersAccordionEl() {
     body.appendChild(item);
   });
 
-  toggle.onclick = () => setHomeAccordionState(key, !_homeAccordionOpen.has(key), toggle, body);
-  setHomeAccordionState(key, _homeAccordionOpen.has(key), toggle, body);
+  toggle.onclick = () => setHomeAccordionState(key, !isHomeAccordionOpen(key), toggle, body);
+  setHomeAccordionState(key, isHomeAccordionOpen(key), toggle, body);
 
   wrap.appendChild(toggle);
   wrap.appendChild(body);
@@ -275,11 +290,11 @@ function buildKaimuAccordionEl() {
   });
 
   toggle.onclick = () => {
-    const nextOpen = !_homeAccordionOpen.has(key);
+    const nextOpen = !isHomeAccordionOpen(key);
     setHomeAccordionState(key, nextOpen, toggle, body);
   };
 
-  const initiallyOpen = _homeAccordionOpen.has(key);
+  const initiallyOpen = isHomeAccordionOpen(key);
   setHomeAccordionState(key, initiallyOpen, toggle, body);
 
   wrap.appendChild(toggle);
@@ -527,7 +542,7 @@ function renderBtypeFilterChips(reports, shopAreaOptions = {}) {
 
   const regionFiltered = applyRegionFilterOnly(reports);
   const btypeCnt = {};
-  regionFiltered.forEach(r => { btypeCnt[r.btype] = (btypeCnt[r.btype] || 0) + 1; });
+  regionFiltered.forEach(r => { const b = r.btype === '不明' ? 'その他' : r.btype; btypeCnt[b] = (btypeCnt[b] || 0) + 1; });
 
   // 地域条件変更で0件になっても、ユーザーが選択した業種は勝手に外さない。
   // 0件になった選択中チップは残して件数0を表示し、ユーザー操作で解除できるようにする。
@@ -766,7 +781,8 @@ function buildLocSectionsHtml(sortedLocs, expandKeys, locExpandKeys) {
     sortedShops.forEach(([shop, reports]) => {
       const btypeCnt = {};
       reports.forEach(r => { btypeCnt[r.btype] = (btypeCnt[r.btype] || 0) + 1; });
-      const mainBtype = Object.entries(btypeCnt).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '不明';
+      const rawBtype = Object.entries(btypeCnt).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'その他';
+      const mainBtype = rawBtype === '不明' ? 'その他' : rawBtype;
       const shopKey = `${loc}/${shop}`;
       const expandedClass = expandKeys.has(shopKey) ? ' expanded' : '';
       const sortedReports = reports.slice().sort((a, b) => yearKey(b.year) - yearKey(a.year));
@@ -872,7 +888,7 @@ function renderShopAreaNow(allReports, options = {}) {
   const q = currentFilter.q.toLowerCase();
   const filtered = applyRegionFilterOnly(allReports).filter(r => {
     // 業種未選択時は全業種を表示。1つ以上選択されている場合のみOR条件で絞り込み。
-    if (currentFilter.btypes.size > 0 && !currentFilter.btypes.has(r.btype)) return false;
+    if (currentFilter.btypes.size > 0 && !currentFilter.btypes.has(r.btype === '不明' ? 'その他' : r.btype)) return false;
     if (q && !(r.shop.toLowerCase().includes(q) || r.loc.toLowerCase().includes(q) || r.text.toLowerCase().includes(q))) return false;
     return true;
   });
@@ -1121,7 +1137,7 @@ function buildPeriodSection(sectionEl) {
 
   const allItem = document.createElement('div');
   allItem.className = 'nav-btn-item';
-  allItem.textContent = '全期間';
+  allItem.innerHTML = `<span>全期間</span><span class="region-cnt">${ALL_REPORTS.length.toLocaleString()}件</span>`;
   allItem.onclick = () => pushView('historyAll', {});
   sectionEl.appendChild(allItem);
 
@@ -1146,12 +1162,12 @@ function buildPeriodSection(sectionEl) {
   heiseiLate.sort((a, b) => b.n - a.n);
   heiseiEarly.sort((a, b) => b.n - a.n);
 
-  buildYearGroup(sectionEl, '令和',     reiwa,       y => `R${String(y.n).padStart(2,'0')}`);
-  buildYearGroup(sectionEl, '平成後期', heiseiLate,  y => `H${y.n}`);
-  buildYearGroup(sectionEl, '平成前期', heiseiEarly, y => `H${y.n}`);
+  buildYearGroup(sectionEl, 'period:reiwa', '令和',     reiwa,       y => `R${String(y.n).padStart(2,'0')}`);
+  buildYearGroup(sectionEl, 'period:heiseiLate', '平成後期', heiseiLate,  y => `H${y.n}`);
+  buildYearGroup(sectionEl, 'period:heiseiEarly', '平成前期', heiseiEarly, y => `H${y.n}`);
 }
 
-function buildYearGroup(container, label, items, fmtLabel) {
+function buildYearGroup(container, key, label, items, fmtLabel) {
   if (!Array.isArray(items) || items.length === 0) return;
   if (!container) return;
   const first = items[items.length - 1];
@@ -1180,10 +1196,8 @@ function buildYearGroup(container, label, items, fmtLabel) {
     body.appendChild(el);
   });
 
-  toggle.onclick = () => {
-    toggle.classList.toggle('open');
-    body.classList.toggle('open');
-  };
+  toggle.onclick = () => setHomeAccordionState(key, !isHomeAccordionOpen(key), toggle, body);
+  setHomeAccordionState(key, isHomeAccordionOpen(key), toggle, body);
 
   wrap.appendChild(toggle);
   wrap.appendChild(body);

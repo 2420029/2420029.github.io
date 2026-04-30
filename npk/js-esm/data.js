@@ -415,7 +415,7 @@ function btypeFromTitleText(html) {
   return null;
 }
 
-const BTYPE_LIST = ['ピンサロ','ヘルス','ソープ','デリヘル','エステ','イメクラ','小料理','キャバ・セクキャバ','ストリップ','体験記','その他','不明'];
+const BTYPE_LIST = ['ピンサロ','ヘルス','ソープ','デリヘル','エステ','イメクラ','小料理','キャバ・セクキャバ','ストリップ','体験記','その他'];
 
 const PAPER_CATEGORIES = [
   { label: '医学・心理学',   url: 'https://pinsalo.info/sp/pape_b.htm' },

@@ -22,16 +22,41 @@ function reportsByCountry(country) { return ALL_REPORTS.filter(r => r.isOverseas
 // ═══════════════════════════════════════════════════════════════════════
 // 8. ナビゲーションスタック
 // ═══════════════════════════════════════════════════════════════════════
-const navStack = [{ type: 'home', params: {}, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set(), subareaExpandKeys: new Set() }];
+const navStack = [{ type: 'home', params: {}, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set(), subareaExpandKeys: new Set(), homeAccordionKeys: new Set() }];
+let scrollRestoreToken = 0;
+
+function cancelPendingScrollRestore() {
+  scrollRestoreToken += 1;
+}
+
+function restoreScrollPositionStrict(scrollY) {
+  const targetY = Math.max(0, scrollY || 0);
+  const token = ++scrollRestoreToken;
+
+  const apply = () => {
+    if (token !== scrollRestoreToken) return;
+    setScrollTop(targetY);
+  };
+
+  apply();
+  requestAnimationFrame(() => {
+    apply();
+    requestAnimationFrame(apply);
+  });
+  [80, 180, 360, 700].forEach(delay => {
+    window.setTimeout(apply, delay);
+  });
+}
 
 function pushView(type, params) {
+  cancelPendingScrollRestore();
   cancelActiveChunkedRender();
   const cur = navStack[navStack.length - 1];
   cur.scrollY = getScrollTop();
   cur.expandKeys = collectExpandKeys();
   cur.locExpandKeys = collectLocExpandKeys();
   cur.subareaExpandKeys = collectSubareaExpandKeys();
-  navStack.push({ type, params, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set(), subareaExpandKeys: new Set() });
+  navStack.push({ type, params, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set(), subareaExpandKeys: new Set(), homeAccordionKeys: new Set() });
   renderCurrent();
   setScrollTop(0);
   updateBackButton();
@@ -52,11 +77,12 @@ function goBack() {
     resetLegacyNav();
   }
   renderCurrent();
-  requestAnimationFrame(() => requestAnimationFrame(() => setScrollTop(prev.scrollY || 0)));
+  restoreScrollPositionStrict(prev.scrollY);
   updateBackButton();
 }
 
 function goHome() {
+  cancelPendingScrollRestore();
   cancelActiveChunkedRender();
   resetHomeViewState();
   renderCurrent();
@@ -68,7 +94,7 @@ function resetHomeViewState() {
   resetLegacyNav();
   setCurrentPageUrl('');
   navStack.length = 1;
-  navStack[0] = { type: 'home', params: {}, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set(), subareaExpandKeys: new Set() };
+  navStack[0] = { type: 'home', params: {}, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set(), subareaExpandKeys: new Set(), homeAccordionKeys: new Set() };
 }
 
 function updateBackButton() {

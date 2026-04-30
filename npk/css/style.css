@@ -114,6 +114,7 @@
     content: '›'; margin-left: auto; color: var(--muted);
     font-size: 18px; font-weight: 300;
   }
+  .nav-btn-item:has(.region-cnt)::after { margin-left: 8px; }
   .nav-btn-item:active { background: var(--accent-dim); color: var(--primary); }
 
   /* ── 地域アコーディオン（トップページ レポートセクション） ── */
