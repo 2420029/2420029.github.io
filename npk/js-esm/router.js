@@ -9,6 +9,7 @@ import {
   renderKaimuYearGroupView,
   renderPageView,
   renderReport,
+  cancelActiveChunkedRender,
 } from './render.js';
 import { escHtml, getScrollTop, setScrollTop } from './utils.js';
 
@@ -24,6 +25,7 @@ function reportsByCountry(country) { return ALL_REPORTS.filter(r => r.isOverseas
 const navStack = [{ type: 'home', params: {}, scrollY: 0, expandKeys: new Set(), locExpandKeys: new Set(), subareaExpandKeys: new Set() }];
 
 function pushView(type, params) {
+  cancelActiveChunkedRender();
   const cur = navStack[navStack.length - 1];
   cur.scrollY = getScrollTop();
   cur.expandKeys = collectExpandKeys();
@@ -36,6 +38,7 @@ function pushView(type, params) {
 }
 
 function goBack() {
+  cancelActiveChunkedRender();
   if (navStack.length <= 1) return;
   const cur = navStack[navStack.length - 1];
   cur.scrollY = getScrollTop();
@@ -54,6 +57,7 @@ function goBack() {
 }
 
 function goHome() {
+  cancelActiveChunkedRender();
   resetHomeViewState();
   renderCurrent();
   setScrollTop(0);

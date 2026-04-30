@@ -4,6 +4,14 @@
 const _homeAccordionOpen = new Set();
 let _kaimuYearCache = null;
 let _kaimuYearLoadingPromise = null;
+let _cancelChunkedRender = null;
+
+function cancelActiveChunkedRender() {
+  if (typeof _cancelChunkedRender === 'function') {
+    _cancelChunkedRender();
+    _cancelChunkedRender = null;
+  }
+}
 
 const KAIMU_YEAR_GROUPS = [
   { key: 'reiwa', label: '令和（R02-R08）', match: x => x.era === 'R' && x.year >= 2 && x.year <= 8 },
@@ -589,6 +597,7 @@ function renderRegionFilterChips(reports, shopAreaOptions = {}) {
 function renderFilteredView(title, reports, options = {}) {
   const hideRegionFilter = !!options.hideRegionFilter;
   const hideTitleCount = options.hideTitleCount !== false;
+  const useChunkedInitialRender = !!options.chunked;
   const shopAreaOptions = {
     subareaMap: options.subareaMap || null,
     subareaOrder: options.subareaOrder || null,
@@ -641,11 +650,13 @@ function renderFilteredView(title, reports, options = {}) {
     </div>`;
   c.appendChild(hd);
 
-  // 地域チップ（都道府県ページでは非表示）
-  if (!hideRegionFilter) renderRegionFilterChips(reports, shopAreaOptions);
+  if (!useChunkedInitialRender) {
+    // 地域チップ（都道府県ページでは非表示）
+    if (!hideRegionFilter) renderRegionFilterChips(reports, shopAreaOptions);
 
-  // 業種チップ（地域・都道府県・国フィルタに連動）
-  renderBtypeFilterChips(reports, shopAreaOptions);
+    // 業種チップ（地域・都道府県・国フィルタに連動）
+    renderBtypeFilterChips(reports, shopAreaOptions);
+  }
 
   // フィルター開閉
   document.getElementById('filter-toggle').addEventListener('click', () => {
@@ -685,7 +696,23 @@ function renderFilteredView(title, reports, options = {}) {
   shopAreaWrap.appendChild(shopArea);
   c.appendChild(shopAreaWrap);
 
-  renderShopArea(reports, shopAreaOptions);
+  if (useChunkedInitialRender) {
+    let cancelled = false;
+    shopArea.innerHTML = `<div class="loading"><div>表示準備中…</div></div>`;
+    _cancelChunkedRender = () => {
+      cancelled = true;
+      _cancelChunkedRender = null;
+    };
+    requestAnimationFrame(() => {
+      if (cancelled) return;
+      _cancelChunkedRender = null;
+      if (!hideRegionFilter) renderRegionFilterChips(reports, shopAreaOptions);
+      renderBtypeFilterChips(reports, shopAreaOptions);
+      renderShopArea(reports, { ...shopAreaOptions, chunked: true });
+    });
+  } else {
+    renderShopArea(reports, shopAreaOptions);
+  }
 }
 
 function renderYearView(yearLabel) {
@@ -695,7 +722,7 @@ function renderYearView(yearLabel) {
 
 
 function renderHistoryAllView() {
-  renderFilteredView('全期間', ALL_REPORTS, { hideTitleCount: true });
+  renderFilteredView('全期間', ALL_REPORTS, { hideTitleCount: true, chunked: true });
   currentPageUrl = 'https://pinsalo.info/sp/historyall.htm';
   updateExtButton();
 }
@@ -741,8 +768,75 @@ function buildLocSectionsHtml(sortedLocs, expandKeys, locExpandKeys) {
   return html;
 }
 
+const RENDER_CHUNK_SIZES = [8, 16, 32, 64];
+
+function attachLocListeners(container, currentView) {
+  container.querySelectorAll('.loc-hd').forEach(el => {
+    el.addEventListener('click', () => {
+      const section = el.closest('.loc-section');
+      if (!section) return;
+      section.classList.toggle('expanded');
+      currentView.locExpandKeys = collectLocExpandKeys();
+    });
+  });
+
+  container.querySelectorAll('.shop-hd').forEach(el => {
+    el.addEventListener('click', () => {
+      el.parentElement.classList.toggle('expanded');
+      currentView.expandKeys = collectExpandKeys();
+    });
+  });
+
+  container.querySelectorAll('.report-item').forEach(el => {
+    el.addEventListener('click', () => {
+      pushView('report', {
+        href: el.dataset.reportHref,
+        title: el.dataset.reportText,
+        year: el.dataset.reportYear,
+      });
+    });
+  });
+}
+
+function renderShopAreaChunked(sortedLocs, shopArea, expandKeys, locExpandKeys, currentView) {
+  let i = 0;
+  let chunkIndex = 0;
+  let cancelled = false;
+
+  const tick = () => {
+    if (cancelled) return;
+    if (i === 0) shopArea.innerHTML = '';
+
+    const size = RENDER_CHUNK_SIZES[Math.min(chunkIndex++, RENDER_CHUNK_SIZES.length - 1)];
+    const chunk = sortedLocs.slice(i, i + size);
+    i += size;
+
+    if (chunk.length > 0) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = buildLocSectionsHtml(chunk, expandKeys, locExpandKeys);
+      attachLocListeners(tmp, currentView);
+      while (tmp.firstChild) shopArea.appendChild(tmp.firstChild);
+    }
+
+    if (i < sortedLocs.length) {
+      requestAnimationFrame(tick);
+    } else {
+      _cancelChunkedRender = null;
+    }
+  };
+
+  _cancelChunkedRender = () => { cancelled = true; };
+  tick();
+}
+
 // ─ 店舗一覧描画 ─
 function renderShopArea(allReports, options = {}) {
+  cancelActiveChunkedRender();
+  renderShopAreaNow(allReports, options);
+}
+
+// ─ 店舗一覧描画本体 ─
+function renderShopAreaNow(allReports, options = {}) {
   const subareaMap = options.subareaMap || null;
   const subareaOrder = options.subareaOrder || null;
   // フィルター更新で再描画しても、詳細地域の展開状態を維持する
@@ -823,6 +917,10 @@ function renderShopArea(allReports, options = {}) {
     shopArea.innerHTML = html;
   } else {
     currentView.subareaExpandKeys = new Set();
+    if (options.chunked) {
+      renderShopAreaChunked(sortedLocs, shopArea, expandKeys, locExpandKeys, currentView);
+      return;
+    }
     shopArea.innerHTML = buildLocSectionsHtml(sortedLocs, expandKeys, locExpandKeys);
   }
 
@@ -835,30 +933,7 @@ function renderShopArea(allReports, options = {}) {
     });
   });
 
-  shopArea.querySelectorAll('.loc-hd').forEach(el => {
-    el.addEventListener('click', () => {
-      const section = el.closest('.loc-section');
-      if (!section) return;
-      section.classList.toggle('expanded');
-      currentView.locExpandKeys = collectLocExpandKeys();
-    });
-  });
-
-  shopArea.querySelectorAll('.shop-hd').forEach(el => {
-    el.addEventListener('click', () => {
-      el.parentElement.classList.toggle('expanded');
-      currentView.expandKeys = collectExpandKeys();
-    });
-  });
-  shopArea.querySelectorAll('.report-item').forEach(el => {
-    el.addEventListener('click', () => {
-      pushView('report', {
-        href: el.dataset.reportHref,
-        title: el.dataset.reportText,
-        year: el.dataset.reportYear,
-      });
-    });
-  });
+  attachLocListeners(shopArea, currentView);
 }
 
 // ═══════════════════════════════════════════════════════════════════════

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>日ピン研 Viewer</title>
+<title>日ピン研 Viewer β</title>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -11,7 +11,7 @@
 
 <header>
   <div style="width:84px;flex-shrink:0"></div>
-  <div class="header-title" id="page-title">日ピン研 Viewer</div>
+  <div class="header-title" id="page-title">日ピン研 Viewer β</div>
   <div class="header-icon-btn" id="theme-toggle"><i data-lucide="moon"></i></div>
   <div class="header-icon-btn" id="m-reload"><i data-lucide="refresh-cw"></i></div>
 </header>
@@ -20,7 +20,7 @@
   <div class="container" id="content">
     <div class="initial-logo-loading" aria-label="読み込み中">
       <img src="./npk_logo.png" alt="日ピン研ビューア ロゴ">
-      <div id="prog-wrap"><div id="prog-bar"></div></div>
+      <div class="loading-spinner"></div>
     </div>
   </div>
 </div>
@@ -32,6 +32,6 @@
   <div class="nav-btn" id="b-ext"><i data-lucide="external-link"></i>元サイト</div>
 </nav>
 
-<script type="module" src="js-esm/app.js?v=019-fix1"></script>
+<script type="module" src="js-esm/app.js"></script>
 </body>
 </html>
