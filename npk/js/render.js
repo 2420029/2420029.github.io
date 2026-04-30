@@ -317,6 +317,43 @@ function renderKaimuYearGroupView(params) {
     });
 }
 
+function renderPaperList(papers, container) {
+  if (!container) return;
+
+  const card = document.createElement('div');
+  card.className = 'org-legacy-card paper-card-list-card';
+  const list = document.createElement('div');
+  list.className = 'paper-card-list';
+
+  papers.forEach(({ href, title, author }) => {
+    const a = document.createElement('a');
+    a.href = href;
+    a.className = 'paper-card paper-list-item';
+    a.innerHTML = `<span class="paper-title">${escHtml(title)}</span>`;
+    if (author) {
+      const authorEl = document.createElement('span');
+      authorEl.className = 'paper-author';
+      authorEl.textContent = author;
+      a.appendChild(authorEl);
+    }
+    list.appendChild(a);
+  });
+
+  card.appendChild(list);
+  container.appendChild(card);
+}
+
+function renderLegacyEmptyCard(container, message = 'データが見つかりませんでした') {
+  if (!container) return;
+  const card = document.createElement('div');
+  card.className = 'org-legacy-card';
+  const empty = document.createElement('div');
+  empty.className = 'legacy-empty-message';
+  empty.textContent = message;
+  card.appendChild(empty);
+  container.appendChild(card);
+}
+
 // ─ ナビセクション（研究・情報 / 組織・参加）追加 ─
 function appendNavSection(container, label, items, iconName = '') {
   const section = document.createElement('div');

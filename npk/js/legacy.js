@@ -443,6 +443,7 @@ function detectLegacyCardCategory(currentUrl) {
   if (LEGACY_CARD_ORG_ROOTS.has(currentFname)) return '組織・参加';
   if (LEGACY_CARD_RESEARCH_ROOTS.has(currentFname)) return '研究・情報';
   if (isKaimuYearPage(currentFname)) return '研究・情報';
+  if (/\/papers\//i.test(currentUrl || '')) return '研究・情報';
   if (LEGACY_CARD_EXCLUDE_ROOTS.has(currentFname)) return null;
 
   const legacyFnames = navStack
@@ -454,6 +455,7 @@ function detectLegacyCardCategory(currentUrl) {
     if (LEGACY_CARD_EXCLUDE_ROOTS.has(fname)) return null;
     if (LEGACY_CARD_ORG_ROOTS.has(fname)) return '組織・参加';
     if (LEGACY_CARD_RESEARCH_ROOTS.has(fname)) return '研究・情報';
+    if (isKaimuYearPage(fname)) return '研究・情報';
   }
   return null;
 }
@@ -821,6 +823,56 @@ function normalizeResearchPaperAuthorLines(container) {
   });
 }
 
+const RESEARCH_PAPER_LIST_PAGES = new Set([
+  'pape_b.htm', 'pape_d.htm', 'pape_a.htm', 'pape_g.htm', 'pape_c.htm', 'pape_h.htm',
+  'pape_g_e.htm', 'pape_g_w.htm', 'kansen.htm', 'kensa.htm', 'ed.htm', 'sinri.htm', 'b_etc.htm',
+]);
+
+function isResearchPaperListPage(fname) {
+  return RESEARCH_PAPER_LIST_PAGES.has(fname || '');
+}
+
+function collectAdjacentPaperAuthor(link) {
+  const parts = [];
+  let node = link?.nextSibling || null;
+  while (node) {
+    if (node.nodeType === 1 && node.tagName?.toLowerCase() === 'a') break;
+    const text = (node.textContent || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+    if (text) parts.push(text);
+    node = node.nextSibling;
+  }
+  const author = parts.join(' ').replace(/\s+/g, ' ').trim();
+  if (!author || author.length > 40 || !/氏$/.test(author)) return '';
+  return author;
+}
+
+function extractPaperListFromContainer(container) {
+  if (!container) return [];
+  const papers = [];
+  const seen = new Set();
+
+  container.querySelectorAll('.org-legacy-card a[href]').forEach(link => {
+    if (link.matches('[data-nav-btn], .genre-tab, .paper-list-item, .kaimu-list-item')) return;
+    const href = link.href || link.getAttribute('href') || '';
+    if (!/\/papers\//i.test(href)) return;
+
+    const rawText = (link.textContent || '').replace(/\s+/g, ' ').trim();
+    if (!rawText) return;
+
+    const authorMatch = rawText.match(/^(.+?)[ 　]+([^ 　]{1,40}氏)$/);
+    const title = (authorMatch ? authorMatch[1] : rawText).trim();
+    const author = (authorMatch ? authorMatch[2] : collectAdjacentPaperAuthor(link)).trim();
+    if (!title) return;
+
+    const key = `${href}:${title}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    papers.push({ href, title, author });
+  });
+
+  return papers;
+}
+
 function formatResearchPaperListLinks(container) {
   if (!container) return;
 
@@ -904,6 +956,20 @@ function collectRankingPagerLinks(container) {
   return links;
 }
 
+function parseRankingEntries(text) {
+  const entries = [];
+  const re = /(\d+)\s*[\.．]\s*([^（()\n\r]{1,60}?氏)\s*[（(]\s*(\d{1,6})\s*[）)]/g;
+  let match;
+  while ((match = re.exec(text || '')) !== null) {
+    entries.push({
+      rank: match[1],
+      name: match[2].replace(/\s+/g, ' ').trim(),
+      score: Number(match[3]),
+    });
+  }
+  return entries;
+}
+
 function formatRankingPage(container) {
   if (!container) return;
 
@@ -912,17 +978,9 @@ function formatRankingPage(container) {
 
   container.querySelectorAll('.org-legacy-card').forEach(card => {
     const text = (card.textContent || '').replace(/\u00a0/g, ' ');
-    const entries = [];
-    const re = /(\d+)\s*[\.．]\s*([^（()\n\r]{1,60}?氏)\s*[（(]\s*(\d{1,6})\s*[）)]/g;
-    let match;
-    while ((match = re.exec(text)) !== null) {
-      entries.push({
-        rank: match[1],
-        name: match[2].replace(/\s+/g, ' ').trim(),
-        score: Number(match[3]),
-      });
-    }
+    const entries = parseRankingEntries(text);
     if (entries.length < 3) return;
+    const firstRank = Number(entries[0]?.rank || 0);
 
     const list = document.createElement('div');
     list.className = 'ranking-list';
@@ -930,6 +988,13 @@ function formatRankingPage(container) {
       pagerRendered = true;
       const pager = document.createElement('div');
       pager.className = 'ranking-pager';
+      const currentStart = Math.floor((firstRank - 1) / 100) * 100 + 1;
+      if (currentStart > 0) {
+        const current = document.createElement('span');
+        current.className = 'ranking-page-link active';
+        current.textContent = `${currentStart}-${currentStart + 99}位`;
+        pager.appendChild(current);
+      }
       pagerLinks.forEach(link => {
         const a = document.createElement('a');
         a.className = 'ranking-page-link';
@@ -988,14 +1053,14 @@ function formatOrganizationMembersPage(container) {
   };
 
   const buildMemberOrg = rawText => {
-    let text = rawText
+    const normalizeMemberText = text => text
       .replace(/会員一覧/g, '')
       .replace(/\r/g, '\n')
       .replace(/[ \t]+/g, ' ')
       .replace(/(元老委員会|運営諮問委員会)/g, '\n$1\n')
       .replace(/(副委員長|主席委員|委員長|副会長|会長|委員(?!会))(?=[ 　A-Za-zＡ-Ｚａ-ｚ一-龥ぁ-んァ-ヶ])/g, '\n$1 ');
 
-    const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+    const lines = normalizeMemberText(rawText).split('\n').map(s => s.trim()).filter(Boolean);
     const execRows = []; // 会長・副会長（委員会に属さないトップレベル役員）
     const sections = [];
     let current = null;
@@ -1051,6 +1116,8 @@ function formatOrganizationMembersPage(container) {
     return wrap;
   };
 
+  let rebuiltMemberOrg = false;
+
   container.querySelectorAll('.org-legacy-card').forEach(card => {
     let removedTitle = false;
     const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
@@ -1091,6 +1158,7 @@ function formatOrganizationMembersPage(container) {
     }
     const org = buildMemberOrg(textFromNodes(memberNodes));
     if (org) {
+      rebuiltMemberOrg = true;
       memberNodes.forEach(node => node.remove());
       const sectionCards = [...org.children].map(section => {
         const sectionCard = document.createElement('div');
@@ -1106,6 +1174,12 @@ function formatOrganizationMembersPage(container) {
     const text = (card.textContent || '').replace(/[\s 　]/g, '');
     if (!text && !card.querySelector('a[href],img,table,input,button,select,textarea')) card.remove();
   });
+
+  if (!rebuiltMemberOrg) {
+    const wrap = container.querySelector('.org-legacy-wrap') || container;
+    wrap.querySelectorAll('.org-legacy-card').forEach(card => card.remove());
+    renderLegacyEmptyCard(wrap, '会員一覧データが見つかりませんでした');
+  }
 }
 
 function formatRecruitmentPage(container) {
@@ -1469,7 +1543,15 @@ function enhanceOrganizationLegacyPage(container, currentUrl, title) {
   container.innerHTML = '';
   container.appendChild(wrap);
   if (navWrap.childNodes.length > 0 && !isKaimuYear) container.appendChild(navWrap);
-  if (cardCategory === '研究・情報' && !isKaimuYear) {
+  if (isResearchPaperListPage(fname)) {
+    const papers = extractPaperListFromContainer(container);
+    wrap.querySelectorAll('.org-legacy-card').forEach(card => card.remove());
+    if (papers.length > 0) {
+      renderPaperList(papers, wrap);
+    } else if (navWrap.childNodes.length === 0) {
+      renderLegacyEmptyCard(wrap);
+    }
+  } else if (cardCategory === '研究・情報' && !isKaimuYear) {
     formatResearchPaperListLinks(container);
   }
   if (fname === 'ranking.php' || fname === 'ranking.htm') {
