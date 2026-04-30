@@ -110,6 +110,7 @@ function fadeOutInitialLogo() {
     return Promise.resolve();
   }
 
+  document.body.classList.remove('loading');
   logo.classList.add('fade-out');
   return new Promise(resolve => {
     window.setTimeout(() => {

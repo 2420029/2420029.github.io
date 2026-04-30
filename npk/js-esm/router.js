@@ -136,7 +136,7 @@ function setTopSectionHeader(el, iconName, text) {
 
 function renderCurrent() {
   const view = navStack[navStack.length - 1];
-  document.getElementById('page-title').textContent = '日ピン研 Viewer';
+  document.getElementById('page-title').textContent = '日ピン研 Viewer β';
 
   switch (view.type) {
     case 'home':    renderHome();                              break;

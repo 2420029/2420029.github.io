@@ -792,7 +792,7 @@ function buildLocSectionsHtml(sortedLocs, expandKeys, locExpandKeys) {
   return html;
 }
 
-const RENDER_CHUNK_SIZES = [8, 16, 32, 64];
+const RENDER_CHUNK_SIZES = [3, 6, 12, 24];
 
 function attachLocListeners(container, currentView) {
   container.querySelectorAll('.loc-hd').forEach(el => {
