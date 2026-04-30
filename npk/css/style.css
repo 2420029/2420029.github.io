@@ -83,6 +83,14 @@
   #b-back:active { color: var(--muted) !important; opacity: 1 !important; }
   #b-ext.ext-disabled { opacity: 0.38; }
 
+  /* ── 初期ローディング中はヘッダー・ナビを非表示 ── */
+  body.loading header,
+  body.loading #bottom-nav { display: none; }
+
+  /* ── トップページ バナー ── */
+  .home-banner { padding: 0; overflow: hidden; width: 100%; max-width: 100%; }
+  .home-banner-img { display: block; width: 100%; max-width: 100%; height: auto; min-width: 0; }
+
   /* ── トップページ ナビ要素 ── */
   .nav-category-header {
     display: flex; align-items: center; gap: 8px;
@@ -97,7 +105,7 @@
   .nav-section-wrap:first-child .nav-category-header { border-top: none; }
   .nav-btn-item {
     display: flex; align-items: center; padding: 13px 18px;
-    border-bottom: 1px solid var(--border); font-size: var(--content-fs);
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: var(--content-fs);
     font-weight: 300;
     cursor: pointer; color: var(--text); background: var(--card);
     transition: background 0.12s;
@@ -119,6 +127,7 @@
     content: '›'; margin-left: 8px; color: var(--muted); font-size: 18px;
     font-weight: 300; transition: transform 0.25s; display: inline-block; flex-shrink: 0;
   }
+  .region-accordion-toggle:not(:has(.region-cnt))::after { margin-left: auto; }
   .region-accordion-toggle.open::after { transform: rotate(90deg); }
   .region-accordion-toggle:active { background: var(--accent-dim); color: var(--primary); }
   .region-cnt {
@@ -299,8 +308,16 @@
 
   /* ── 初回ロード画面ロゴ ── */
   .initial-logo-loading {
-    position: absolute;
-    inset: 0;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 2147483647;
+    background: var(--bg);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -322,32 +339,34 @@
   }
   .initial-logo-loading img {
     display: block;
-    height: min(40%, 40vh);
-    width: auto;
-    max-width: 80vw;
+    width: min(78vmin, 340px);
+    height: auto;
+    max-width: 84vw;
+    max-height: 52dvh;
     object-fit: contain;
     animation: floatZoom 3s ease-in-out infinite;
     will-change: transform, opacity;
   }
-  #prog-wrap {
-    width: 200px; height: 4px;
-    background: rgba(15,23,42,0.18);
-    border-radius: 2px; overflow: hidden;
-    margin-top: 20px;
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
-  #prog-wrap #prog-bar {
-    height: 100%; width: 0%;
-    background: rgba(15,23,42,0.78);
-    transition: width 0.3s ease;
+  .loading-spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgba(15, 23, 42, 0.12);
+    border-top-color: rgba(15, 23, 42, 0.55);
+    border-radius: 50%;
+    animation: spin 0.85s linear infinite;
+    margin-top: 28px;
   }
-  .initial-logo-loading #prog-text {
-    display: none;
+  body.dark .loading-spinner {
+    border-color: rgba(255, 255, 255, 0.15);
+    border-top-color: rgba(255, 255, 255, 0.7);
   }
-  body.dark #prog-wrap { background: rgba(255,255,255,0.25); }
-  body.dark #prog-wrap #prog-bar { background: rgba(255,255,255,0.9); }
   @media (prefers-reduced-motion: reduce) {
     .initial-logo-loading img,
-    .initial-logo-loading.fade-out {
+    .initial-logo-loading.fade-out,
+    .loading-spinner {
       animation: none;
     }
   }
@@ -377,8 +396,8 @@
   .report-body p { margin: 0.5em 0; }
 
   /* ── レガシーページ ナビボタン（cf_only移植） ── */
-  .nav-btn-group { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); background: var(--surface); }
-  .nav-btn-group a[data-nav-btn] { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font-size: var(--content-fs); font-weight: 300; cursor: pointer; text-decoration: none; transition: background 0.12s; }
+  .nav-btn-group { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); background: var(--card); }
+  .nav-btn-group a[data-nav-btn] { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); background: var(--card); color: var(--text); font-size: var(--content-fs); font-weight: 300; cursor: pointer; text-decoration: none; transition: background 0.12s; }
   .nav-btn-group a[data-nav-btn]::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 18px; font-weight: 300; }
   .nav-btn-group a[data-nav-btn]:active { background: var(--accent-dim); color: var(--accent); }
   .genre-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border); }
@@ -449,6 +468,17 @@
   }
   .org-legacy-title { font-size: calc(var(--content-fs) + 1px); font-weight: 700; margin-bottom: 4px; }
   .org-legacy-sub { font-size: calc(var(--content-fs) - 5px); color: var(--muted); line-height: 1.5; }
+  .research-legacy-wrap { padding-bottom: 0; }
+  .research-legacy-wrap .org-legacy-title-card {
+    margin: -12px -12px 0; border-radius: 0;
+    background: var(--bg); border: none; border-bottom: 1px solid var(--border);
+    padding: 10px 14px 4px;
+  }
+  .research-legacy-wrap .org-legacy-title {
+    font-size: calc(var(--content-fs) - 2px); font-weight: 700;
+    color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0;
+  }
+  .research-legacy-wrap + .org-legacy-nav { padding-left: 0; padding-right: 0; }
   .org-legacy-card {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 12px; padding: 14px 16px; margin-bottom: 12px;
@@ -651,6 +681,16 @@
   }
   .org-legacy-card a.paper-list-item:active .paper-title { color: var(--primary); }
   .org-legacy-card a.paper-list-item:active { background: var(--primary-light); }
+  .paper-card-list {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .org-legacy-card a.paper-card {
+    margin: 0;
+  }
+  .legacy-empty-message {
+    color: var(--muted); font-size: calc(var(--content-fs) - 3px);
+    line-height: 1.6;
+  }
   .org-legacy-wrap.research-legacy-wrap .org-legacy-card,
   .org-legacy-wrap.research-legacy-wrap .org-legacy-card * {
     font-weight: 300 !important;
@@ -693,6 +733,9 @@
     font-weight: 700;
   }
   .ranking-page-link:active { background: var(--accent-dim); color: var(--primary); }
+  .ranking-page-link.active {
+    background: var(--primary); border-color: var(--primary); color: #fff;
+  }
   .ranking-group-title {
     padding: 8px 0 6px; color: var(--muted);
     font-size: calc(var(--content-fs) - 4px); font-weight: 700;
