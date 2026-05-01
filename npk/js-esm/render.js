@@ -546,6 +546,10 @@ function findReportByHref(href) {
   return ALL_REPORTS.find(r => sameReportHref(r.href, href)) || null;
 }
 
+function isStoreReportHref(href) {
+  return /\/reports\//i.test(String(href || ''));
+}
+
 function extractShopNameFromTitle(text) {
   const m = String(text || '').match(/「([^」]+)」/);
   return m ? m[1].trim() : '';
@@ -577,6 +581,8 @@ function createHistoryPresetFilter(params = {}) {
 }
 
 function getReportHistoryLinkInfo(params = {}, doc = null) {
+  if (!isStoreReportHref(params.href)) return null;
+
   const report = findReportByHref(params.href);
   const sourceTitle = params.title || report?.text || doc?.title || '';
   const shop = report?.shop || extractShopNameFromTitle(sourceTitle);
