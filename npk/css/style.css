@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   :root {
     --content-fs: 17px;
@@ -31,7 +31,7 @@
     --header-bg: #467B81;
   }
   body {
-    font-family: 'Noto Sans JP', 'Helvetica Neue', Arial, 'Hiragino Sans', sans-serif;
+    font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Noto Sans JP', sans-serif;
     background: var(--bg); color: var(--text);
     font-size: var(--content-fs);
     -webkit-text-size-adjust: 100%;
@@ -40,13 +40,13 @@
     display: flex; flex-direction: column;
   }
   body[data-font="sans"] {
-    font-family: 'Noto Sans JP', 'Helvetica Neue', Arial, 'Hiragino Sans', sans-serif;
+    font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Noto Sans JP', sans-serif;
   }
   body[data-font="serif"] {
     font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif;
   }
   body[data-font="round"] {
-    font-family: 'Hiragino Maru Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+    font-family: 'M PLUS Rounded 1c', 'Hiragino Maru Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
   }
 
   /* ── ヘッダー ── */
@@ -667,10 +667,11 @@
     padding: 10px 14px; display: flex; flex-direction: column; gap: 5px;
   }
   .recruit-example-row {
-    display: grid; grid-template-columns: 88px 1fr; gap: 8px;
+    display: grid; grid-template-columns: 8.2em minmax(0, 1fr); gap: 8px;
   }
   .recruit-example-label {
     color: var(--muted); font-size: calc(var(--content-fs) - 3px); line-height: 1.45;
+    white-space: nowrap;
   }
   .recruit-example-value {
     color: var(--text); font-size: calc(var(--content-fs) - 1px); line-height: 1.45;
