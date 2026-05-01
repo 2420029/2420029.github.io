@@ -99,7 +99,16 @@ function renderHome() {
   // ─ バナー ─
   const banner = document.createElement('div');
   banner.className = 'home-banner';
+  banner.setAttribute('role', 'button');
+  banner.tabIndex = 0;
   banner.innerHTML = '<img src="./ad.png" alt="" class="home-banner-img">';
+  const showDummyAdMessage = () => alert('ダミー広告のテストです。');
+  banner.addEventListener('click', showDummyAdMessage);
+  banner.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    showDummyAdMessage();
+  });
   c.appendChild(banner);
 
   // ─ 新着レポート ─

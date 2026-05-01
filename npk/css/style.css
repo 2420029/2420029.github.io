@@ -103,7 +103,8 @@
   body.loading #bottom-nav { display: none; }
 
   /* ── トップページ バナー ── */
-  .home-banner { padding: 0; overflow: hidden; width: 100%; max-width: 100%; }
+  .home-banner { padding: 0; overflow: hidden; width: 100%; max-width: 100%; cursor: pointer; }
+  .home-banner:active { opacity: 0.9; }
   .home-banner-img { display: block; width: 100%; max-width: 100%; height: auto; min-width: 0; }
 
   /* ── トップページ ナビ要素 ── */
