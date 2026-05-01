@@ -41,6 +41,51 @@ const KAIMU_YEAR_GROUPS = [
   { key: 'heiseiEarly', label: '平成前期（H12-H20）', match: x => x.era === 'H' && x.year >= 12 && x.year <= 20 },
 ];
 
+function localDateString(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function daysBetweenLocalDates(a, b) {
+  if (!a || !b) return NaN;
+  const [ay, am, ad] = a.split('-').map(Number);
+  const [by, bm, bd] = b.split('-').map(Number);
+  if (![ay, am, ad, by, bm, bd].every(Number.isFinite)) return NaN;
+  const start = new Date(ay, am - 1, ad);
+  const end = new Date(by, bm - 1, bd);
+  return Math.round((end - start) / 86400000);
+}
+
+function recentDateLabel(dateStr) {
+  const [, month, day] = String(dateStr || '').split('-');
+  if (!month || !day) return '';
+  return `${Number(month)}/${Number(day)}`;
+}
+
+function recentReportsWithinDays(days = 7) {
+  const today = localDateString();
+  return ALL_REPORTS
+    .filter(r => {
+      const diff = daysBetweenLocalDates(r.postedDate, today);
+      return Number.isFinite(diff) && diff >= 0 && diff < days;
+    })
+    .sort((a, b) => {
+      const dateOrder = String(b.postedDate || '').localeCompare(String(a.postedDate || ''));
+      if (dateOrder) return dateOrder;
+      return yearKey(b.year) - yearKey(a.year);
+    });
+}
+
+function createRecentReportItem({ text, href, year = '', postedDate = '', isToday = false }) {
+  const item = document.createElement('div');
+  item.className = 'nav-btn-item recent-report-item';
+  const badge = isToday ? '本日' : recentDateLabel(postedDate);
+  item.innerHTML = `
+    ${badge ? `<span class="recent-report-badge${isToday ? ' today' : ''}">${escHtml(badge)}</span>` : ''}
+    <span class="recent-report-text">${escHtml(text)}</span>`;
+  item.onclick = () => pushView('report', { href, title: text, year });
+  return item;
+}
+
 function renderHome() {
   setCurrentPageUrl('');
   const prefCnt = {};
@@ -57,12 +102,12 @@ function renderHome() {
   banner.innerHTML = '<img src="./ad.png" alt="" class="home-banner-img">';
   c.appendChild(banner);
 
-  // ─ 今日のレポート ─
+  // ─ 新着レポート ─
   const todaySection = document.createElement('div');
   todaySection.className = 'nav-section-wrap';
   const todayHdr = document.createElement('div');
   todayHdr.className = 'nav-category-header';
-  setTopSectionHeader(todayHdr, TOP_SECTION_ICONS.today, '今日のレポート（読み込み中…）');
+  setTopSectionHeader(todayHdr, TOP_SECTION_ICONS.today, '新着レポート（読み込み中…）');
   todaySection.appendChild(todayHdr);
   c.appendChild(todaySection);
   fetchTodayReports(todaySection); // 非同期
@@ -115,7 +160,7 @@ function renderHome() {
   ], TOP_SECTION_ICONS.organization);
 }
 
-// ─ 今日のレポート取得（非同期）─
+// ─ 新着レポート取得（非同期）─
 async function fetchTodayReports(container) {
   try {
     const html = await fetchWithProxy('https://pinsalo.info/sp/today.htm');
@@ -134,20 +179,53 @@ async function fetchTodayReports(container) {
       })
       .filter(Boolean);
 
-    const hdr = container.querySelector('.nav-category-header');
-    if (hdr) setTopSectionHeader(hdr, TOP_SECTION_ICONS.today, `今日のレポート（${todayReports.length}件）`);
-    todayReports.forEach(({ text, href }) => {
-      const item = document.createElement('div');
-      item.className = 'nav-btn-item';
-      item.textContent = text;
-      item.onclick = () => pushView('report', { href, title: text, year: '' });
-      container.appendChild(item);
+    const todayHrefSet = new Set(todayReports.map(r => {
+      try { return new URL(r.href).href; } catch { return r.href; }
+    }));
+    const otherReports = recentReportsWithinDays(7).filter(r => {
+      try { return !todayHrefSet.has(new URL(r.href).href); } catch { return !todayHrefSet.has(r.href); }
     });
-  } catch (e) {
-    console.warn('今日のレポート取得失敗:', e);
+
     const hdr = container.querySelector('.nav-category-header');
-    if (hdr) setTopSectionHeader(hdr, TOP_SECTION_ICONS.today, '今日のレポート（取得失敗）');
+    if (hdr) setTopSectionHeader(hdr, TOP_SECTION_ICONS.today, `新着レポート（本日 ${todayReports.length}件）`);
+    todayReports.forEach(report => {
+      container.appendChild(createRecentReportItem({ ...report, isToday: true }));
+    });
+    container.appendChild(buildOtherRecentReportsAccordionEl(otherReports));
+  } catch (e) {
+    console.warn('新着レポート取得失敗:', e);
+    const hdr = container.querySelector('.nav-category-header');
+    if (hdr) setTopSectionHeader(hdr, TOP_SECTION_ICONS.today, '新着レポート（取得失敗）');
   }
+}
+
+function buildOtherRecentReportsAccordionEl(reports) {
+  const key = 'recent:other';
+  const wrap = document.createElement('div');
+  wrap.className = 'region-accordion recent-other-accordion';
+
+  const toggle = document.createElement('div');
+  toggle.className = 'region-accordion-toggle';
+  toggle.innerHTML = `その他の新着レポート<span class="region-cnt">${reports.length.toLocaleString()}件</span>`;
+
+  const body = document.createElement('div');
+  body.className = 'region-accordion-body';
+
+  if (reports.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'accordion-loading';
+    empty.textContent = '過去7日以内の追加レポートはありません';
+    body.appendChild(empty);
+  } else {
+    reports.forEach(r => body.appendChild(createRecentReportItem(r)));
+  }
+
+  toggle.onclick = () => setHomeAccordionState(key, !isHomeAccordionOpen(key), toggle, body);
+  setHomeAccordionState(key, isHomeAccordionOpen(key), toggle, body);
+
+  wrap.appendChild(toggle);
+  wrap.appendChild(body);
+  return wrap;
 }
 
 // ─ 地域アコーディオン要素生成 ─

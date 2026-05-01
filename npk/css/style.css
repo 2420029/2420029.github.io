@@ -2,27 +2,33 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   :root {
     --content-fs: 17px;
-    --primary: #2563eb;
-    --primary-light: #eff6ff;
-    --accent-dim: rgba(37,99,235,0.08);
-    --bg: #f1f5f9;
-    --card: #fff;
-    --border: #e2e8f0;
-    --border-strong: #cbd5e1;
-    --text: #0f172a;
-    --muted: #64748b;
-    --sub-muted: #94a3b8;
+    --primary: #4F89D4;
+    --primary-light: rgba(119,169,219,0.18);
+    --accent-dim: rgba(79,137,212,0.10);
+    --bg: #EBF2F9;
+    --card: #ffffff;
+    --border: #D1DEE9;
+    --border-strong: #9FC0DE;
+    --text: #17324d;
+    --muted: #5f7890;
+    --sub-muted: #8aa6bd;
     --accent: #ea580c;
-    --header-bg: #1e293b;
+    --header-bg: #4F89D4;
     --bottom-h: 56px;
   }
-  body.dark {
-    --bg: #0f172a; --card: #1e293b; --border: #2d3f55; --border-strong: #3d5068;
-    --text: #e2e8f0; --muted: #94a3b8; --sub-muted: #64748b;
-    --primary: #60a5fa; --primary-light: rgba(96,165,250,0.12);
-    --accent-dim: rgba(96,165,250,0.12);
-    --header-bg: #0a1525;
-    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif;
+  body[data-palette="dark"] {
+    --bg: #1E1C1E; --card: #373537; --border: #4E4C4E; --border-strong: #6A6965;
+    --text: #D9D8D4; --muted: #C6C5C3; --sub-muted: #8b8986;
+    --primary: #C6C5C3; --primary-light: rgba(198,197,195,0.13);
+    --accent-dim: rgba(198,197,195,0.10);
+    --header-bg: #1E1C1E;
+  }
+  body[data-palette="sepia"] {
+    --bg: #CDCEC7; --card: #f4f0df; --border: #E1AC57; --border-strong: #B25730;
+    --text: #2d3f42; --muted: #467B81; --sub-muted: #4A9BAA;
+    --primary: #B25730; --primary-light: rgba(225,172,87,0.28);
+    --accent-dim: rgba(231,104,102,0.12);
+    --header-bg: #467B81;
   }
   body {
     font-family: 'Noto Sans JP', 'Helvetica Neue', Arial, 'Hiragino Sans', sans-serif;
@@ -32,6 +38,15 @@
     height: 100vh; height: 100dvh;
     overflow: hidden;
     display: flex; flex-direction: column;
+  }
+  body[data-font="sans"] {
+    font-family: 'Noto Sans JP', 'Helvetica Neue', Arial, 'Hiragino Sans', sans-serif;
+  }
+  body[data-font="serif"] {
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif;
+  }
+  body[data-font="round"] {
+    font-family: 'Hiragino Maru Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
   }
 
   /* ── ヘッダー ── */
@@ -78,7 +93,8 @@
   .nav-btn:active { color: var(--primary); }
   .nav-btn svg { width: 20px; height: 20px; stroke-width: 1.75; }
   .fs-icon { font-size: 19px; font-weight: 700; line-height: 1; font-family: 'Noto Sans JP', sans-serif; }
-  body.dark .fs-icon { font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif; }
+  body[data-font="serif"] .fs-icon { font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif; }
+  body[data-font="round"] .fs-icon { font-family: 'Hiragino Maru Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif; }
   #b-back { transition: none; color: var(--muted) !important; opacity: 1 !important; }
   #b-back:active { color: var(--muted) !important; opacity: 1 !important; }
   #b-ext.ext-disabled { opacity: 0.38; }
@@ -116,6 +132,16 @@
   }
   .nav-btn-item:has(.region-cnt)::after { margin-left: 8px; }
   .nav-btn-item:active { background: var(--accent-dim); color: var(--primary); }
+  .recent-report-item { gap: 10px; }
+  .recent-report-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .recent-report-badge {
+    min-width: 42px; padding: 3px 7px; border-radius: 999px;
+    background: var(--bg); color: var(--muted); border: 1px solid var(--border);
+    font-size: 12px; font-weight: 700; text-align: center; flex-shrink: 0;
+  }
+  .recent-report-badge.today {
+    background: #dc2626; border-color: #dc2626; color: #fff;
+  }
 
   /* ── 地域アコーディオン（トップページ レポートセクション） ── */
   .region-accordion { background: var(--card); border-bottom: 1px solid var(--border); }
@@ -360,7 +386,7 @@
     animation: spin 0.85s linear infinite;
     margin-top: 28px;
   }
-  body.dark .loading-spinner {
+  body[data-palette="dark"] .loading-spinner {
     border-color: rgba(255, 255, 255, 0.15);
     border-top-color: rgba(255, 255, 255, 0.7);
   }

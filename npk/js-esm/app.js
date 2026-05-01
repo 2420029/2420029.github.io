@@ -16,7 +16,7 @@ import { legacyCurrentUrl, openLegacyPage } from './legacy.js';
 import { escHtml, setScrollTop } from './utils.js';
 
 // ═══════════════════════════════════════════════════════════════════════
-// 16. 文字サイズ切替
+// 16. 表示設定
 // ═══════════════════════════════════════════════════════════════════════
 const FS_STEPS = [
   { size: '13px', label: '特小' },
@@ -26,33 +26,45 @@ const FS_STEPS = [
   { size: '21px', label: '特大' },
 ];
 let fsIdx = 2;
-document.getElementById('b-font').addEventListener('click', () => {
-  fsIdx = (fsIdx + 1) % FS_STEPS.length;
+
+const PALETTES = [
+  { key: 'light', label: 'ライト', font: 'sans' },
+  { key: 'dark', label: 'ダーク', font: 'serif' },
+  { key: 'sepia', label: 'レトロ', font: 'round' },
+];
+
+function applyFontSize(index) {
+  fsIdx = Math.max(0, Math.min(FS_STEPS.length - 1, Number(index) || 0));
   document.documentElement.style.setProperty('--content-fs', FS_STEPS[fsIdx].size);
-  document.getElementById('font-label').textContent = FS_STEPS[fsIdx].label;
+  const label = document.getElementById('font-label');
+  if (label) label.textContent = FS_STEPS[fsIdx].label;
+  localStorage.setItem('pinsalo_v2_font_size_idx', String(fsIdx));
+}
+
+function applyPalette(key) {
+  const palette = PALETTES.find(p => p.key === key) || PALETTES[0];
+  document.body.dataset.palette = palette.key;
+  document.body.dataset.font = palette.font;
+  const label = document.getElementById('palette-label');
+  if (label) label.textContent = palette.label;
+  localStorage.setItem('pinsalo_v2_palette', palette.key);
+}
+
+function cyclePalette() {
+  const current = document.body.dataset.palette || PALETTES[0].key;
+  const idx = PALETTES.findIndex(p => p.key === current);
+  applyPalette(PALETTES[(idx + 1 + PALETTES.length) % PALETTES.length].key);
+}
+
+document.getElementById('b-palette')?.addEventListener('click', cyclePalette);
+
+document.getElementById('b-font')?.addEventListener('click', () => {
+  applyFontSize((fsIdx + 1) % FS_STEPS.length);
 });
 
-// ═══════════════════════════════════════════════════════════════════════
-// 17. ダークモード切替
-// ═══════════════════════════════════════════════════════════════════════
-function applyTheme(dark) {
-  document.body.classList.toggle('dark', dark);
-  const btn = document.getElementById('theme-toggle');
-  if (btn) btn.innerHTML = `<i data-lucide="${dark ? 'sun' : 'moon'}"></i>`;
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-  localStorage.setItem('pinsalo_v2_theme', dark ? 'dark' : 'light');
-}
-
-document.getElementById('theme-toggle').onclick = () => {
-  applyTheme(!document.body.classList.contains('dark'));
-};
-
-// 起動時テーマ復元
-if (localStorage.getItem('pinsalo_v2_theme') === 'dark') {
-  applyTheme(true);
-} else {
-  applyTheme(false);
-}
+localStorage.removeItem('pinsalo_v2_font_kind');
+applyPalette(localStorage.getItem('pinsalo_v2_palette') || 'light');
+applyFontSize(localStorage.getItem('pinsalo_v2_font_size_idx') ?? fsIdx);
 
 // ═══════════════════════════════════════════════════════════════════════
 // 17-B. レガシーコンテンツ内リンク捕捉
@@ -126,11 +138,6 @@ function fadeOutInitialLogo() {
 (async () => {
   // Lucide アイコン初期化
   if (typeof lucide !== 'undefined') lucide.createIcons();
-
-  // 保存済みテーマを適用（ダーク時はアイコン更新）
-  if (localStorage.getItem('pinsalo_v2_theme') === 'dark') {
-    applyTheme(true);
-  }
 
   try {
     await loadData(false);

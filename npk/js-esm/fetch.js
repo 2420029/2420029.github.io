@@ -52,10 +52,30 @@ function yearKey(label) {
   return 0;
 }
 
+function westernYearFromEraLabel(label) {
+  let m = String(label || '').match(/令和(\d+)/);
+  if (m) return 2018 + Number(m[1]);
+  m = String(label || '').match(/平成(\d+)/);
+  if (m) return 1988 + Number(m[1]);
+  m = String(label || '').match(/昭和(\d+)/);
+  if (m) return 1925 + Number(m[1]);
+  return 0;
+}
+
+function postedDateFromHistoryItem(text, yearLabel) {
+  const m = String(text || '').match(/^\s*(\d{1,2})[./](\d{1,2})\b/);
+  const year = westernYearFromEraLabel(yearLabel);
+  if (!m || !year) return '';
+  const month = Number(m[1]);
+  const day = Number(m[2]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return '';
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // 5. データロード（localStorage cache 1日）
 // ═══════════════════════════════════════════════════════════════════════
-const CACHE_KEY = 'pinsalo_v2_data_v1';
+const CACHE_KEY = 'pinsalo_v2_data_v2';
 const CACHE_TTL = 86400000;
 
 let ALL_REPORTS = [];
@@ -184,10 +204,12 @@ async function loadData(forceRefresh = false) {
       if (isNoise(loc)) return;
 
       const cls = classify(loc);
+      const historyItemText = a.closest('div, p, li, td')?.textContent || text;
       reports.push({
         href: absUrl,
         text,
         year: yLabel,
+        postedDate: postedDateFromHistoryItem(historyItemText, yLabel),
         loc,
         shop: extractShopName(text),
         btype: btypeFromUrl(absUrl),
