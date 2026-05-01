@@ -385,6 +385,30 @@
   .report-view-hd { padding: 12px 12px 0; }
   .report-view-title { font-size: calc(var(--content-fs) - 1px); font-weight: 700; margin-bottom: 4px; line-height: 1.4; }
   .report-view-sub { font-size: calc(var(--content-fs) - 4px); color: var(--muted); margin-bottom: 8px; }
+  .report-history-card {
+    background: linear-gradient(135deg, var(--primary-light), var(--card));
+    border: 2px solid color-mix(in srgb, var(--primary) 62%, var(--border));
+    border-radius: 10px; margin: 8px 12px 18px; overflow: hidden;
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.14), inset 0 1px 0 rgba(255,255,255,0.75);
+  }
+  .report-shop-history-link {
+    appearance: none; border: 0; background: transparent;
+    color: var(--text); padding: 16px 18px; width: 100%;
+    font: inherit; font-size: calc(var(--content-fs) - 1px); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    text-align: center; min-height: 58px;
+  }
+  .report-shop-history-link::after { content: '›'; color: var(--muted); font-size: 18px; font-weight: 300; margin-left: 4px; }
+  .report-shop-history-link:active { background: var(--primary-light); color: var(--primary); }
+  .report-shop-history-icon {
+    width: 24px; height: 24px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--primary); flex-shrink: 0;
+  }
+  .report-shop-history-icon svg { width: 22px; height: 22px; stroke-width: 2.2; }
+  .report-shop-history-label { display: inline-flex; justify-content: center; flex-wrap: wrap; gap: 2px; min-width: 0; }
+  .report-shop-history-name { color: var(--text); font-weight: 700; overflow-wrap: anywhere; }
+  .report-shop-history-text { color: var(--text); font-weight: 700; }
   .report-body {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 10px; padding: 16px; margin: 8px 12px 12px;

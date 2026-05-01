@@ -455,6 +455,79 @@ function getRegionNameByPref(pref) {
   return region ? region.name : '';
 }
 
+function sameReportHref(a, b) {
+  if (!a || !b) return false;
+  try {
+    return new URL(a).href === new URL(b).href;
+  } catch {
+    return a === b;
+  }
+}
+
+function findReportByHref(href) {
+  return ALL_REPORTS.find(r => sameReportHref(r.href, href)) || null;
+}
+
+function extractShopNameFromTitle(text) {
+  const m = String(text || '').match(/「([^」]+)」/);
+  return m ? m[1].trim() : '';
+}
+
+function createHistoryPresetFilter(params = {}) {
+  const shop = (params.presetQ || '').trim();
+  if (!shop) return null;
+
+  const filter = createDefaultFilter();
+  filter.q = shop;
+
+  if (params.presetIsOverseas) {
+    if (params.presetCountry) {
+      filter.region = '海外';
+      filter.country = params.presetCountry;
+    }
+    return filter;
+  }
+
+  if (params.presetPref) {
+    const region = getRegionNameByPref(params.presetPref);
+    if (region) {
+      filter.region = region;
+      filter.prefs = new Set([params.presetPref]);
+    }
+  }
+  return filter;
+}
+
+function getReportHistoryLinkInfo(params = {}, doc = null) {
+  const report = findReportByHref(params.href);
+  const sourceTitle = params.title || report?.text || doc?.title || '';
+  const shop = report?.shop || extractShopNameFromTitle(sourceTitle);
+  if (!shop) return null;
+
+  return {
+    shop,
+    loc: report?.loc || '',
+    pref: report?.pref || '',
+    country: report?.country || '',
+    isOverseas: !!report?.isOverseas,
+    title: sourceTitle || shop,
+  };
+}
+
+function buildReportHistoryCardHtml(info) {
+  if (!info?.shop) return '';
+  return `
+    <div class="report-history-card">
+      <button type="button" class="report-shop-history-link" id="report-shop-history-link">
+        <span class="report-shop-history-icon"><i data-lucide="calendar-days"></i></span>
+        <span class="report-shop-history-label">
+          <span class="report-shop-history-name">「${escHtml(info.shop)}」</span>
+          <span class="report-shop-history-text">の全期間レポート</span>
+        </span>
+      </button>
+    </div>`;
+}
+
 function prefBelongsToRegion(pref, regionName) {
   if (!pref || !regionName) return false;
   const region = REGIONS.find(r => r.name === regionName);
@@ -761,7 +834,15 @@ function renderYearView(yearLabel) {
 }
 
 
-function renderHistoryAllView() {
+function renderHistoryAllView(params = {}) {
+  const currentView = navStack[navStack.length - 1];
+  const presetFilter = createHistoryPresetFilter(params);
+  if (presetFilter && currentView && !currentView.filter) {
+    currentView.filter = presetFilter;
+  }
+  if (params.expandAll && currentView && !currentView.expandAllApplied) {
+    currentView.expandAllOnInitialRender = true;
+  }
   renderFilteredView('全期間', ALL_REPORTS, { hideTitleCount: true, chunked: true });
   setCurrentPageUrl('https://pinsalo.info/sp/historyall.htm');
 }
@@ -917,6 +998,15 @@ function renderShopAreaNow(allReports, options = {}) {
   }
 
   const validLocKeys = new Set(sortedLocs.map(([loc]) => loc));
+  if (currentView.expandAllOnInitialRender) {
+    currentView.locExpandKeys = new Set(sortedLocs.map(([loc]) => loc));
+    currentView.expandKeys = new Set(
+      sortedLocs.flatMap(([loc, shopMap]) => [...shopMap.keys()].map(shop => `${loc}/${shop}`))
+    );
+    currentView.expandAllOnInitialRender = false;
+    currentView.expandAllApplied = true;
+  }
+
   const expandKeys = currentView.expandKeys || new Set();
   currentView.locExpandKeys = new Set([...(currentView.locExpandKeys || new Set())].filter(k => validLocKeys.has(k)));
   const locExpandKeys = currentView.locExpandKeys;
@@ -1044,6 +1134,26 @@ function postProcessReportDoc(doc) {
     });
     node.replaceWith(frag);
   });
+
+  const reportCreditWalker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  const creditNodes = [];
+  while (reportCreditWalker.nextNode()) {
+    const node = reportCreditWalker.currentNode;
+    if (node.nodeValue.includes('がレポートしております。')) creditNodes.push(node);
+  }
+  creditNodes.forEach(node => {
+    const parts = node.nodeValue.split('がレポートしております。');
+    if (parts.length < 2) return;
+    const frag = doc.createDocumentFragment();
+    parts.forEach((part, idx) => {
+      if (part) frag.appendChild(doc.createTextNode(part));
+      if (idx < parts.length - 1) {
+        frag.appendChild(doc.createElement('br'));
+        frag.appendChild(doc.createTextNode('がレポートしております。'));
+      }
+    });
+    node.replaceWith(frag);
+  });
 }
 
 async function renderReport(params) {
@@ -1075,8 +1185,22 @@ async function renderReport(params) {
       console.warn('レポート後処理失敗:', postProcessError);
     }
     const body = doc.body ? doc.body.innerHTML : html;
+    const historyInfo = getReportHistoryLinkInfo(params, doc);
 
-    c.innerHTML = `<div class="report-body">${body}</div>`;
+    c.innerHTML = `<div class="report-body">${body}</div>${buildReportHistoryCardHtml(historyInfo)}`;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    const historyLink = document.getElementById('report-shop-history-link');
+    if (historyLink && historyInfo?.shop) {
+      historyLink.addEventListener('click', () => {
+        pushView('historyAll', {
+          presetQ: historyInfo.shop,
+          presetPref: historyInfo.pref,
+          presetCountry: historyInfo.country,
+          presetIsOverseas: historyInfo.isOverseas,
+          expandAll: true,
+        });
+      });
+    }
   } catch (e) {
     c.innerHTML = `
       <div class="report-view-hd">

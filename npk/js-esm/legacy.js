@@ -1495,6 +1495,10 @@ function enhanceOrganizationLegacyPage(container, currentUrl, title) {
   };
   const fallbackCategory = cardCategory || 'ページ';
   const isKaimuYear = isKaimuYearPage(fname);
+  const isResearchPaperDetail = cardCategory === '研究・情報'
+    && !pageMeta[fname]
+    && !isKaimuYear
+    && !isResearchPaperListPage(fname);
   const kaimuYearLabel = isKaimuYear ? kaimuYearLabelFromFname(fname, title) : '';
   const meta = isKaimuYear
     ? { title: `会務報告（${kaimuYearLabel}）` }
@@ -1526,10 +1530,12 @@ function enhanceOrganizationLegacyPage(container, currentUrl, title) {
   const wrap = document.createElement('div');
   wrap.className = 'org-legacy-wrap';
   if (cardCategory === '研究・情報') wrap.classList.add('research-legacy-wrap');
-  wrap.innerHTML = `
-    <div class="org-legacy-title-card">
-      <div class="org-legacy-title">${escHtml(meta.title || title || LEGACY_NAV_LABELS[fname] || '組織・参加')}</div>
-    </div>`;
+  if (!isResearchPaperDetail) {
+    wrap.innerHTML = `
+      <div class="org-legacy-title-card">
+        <div class="org-legacy-title">${escHtml(meta.title || title || LEGACY_NAV_LABELS[fname] || '組織・参加')}</div>
+      </div>`;
+  }
 
   const appendCard = card => {
     if (!card || card.childNodes.length === 0) return;

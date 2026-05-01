@@ -175,7 +175,7 @@ function renderCurrent() {
       break;
     case 'country': renderFilteredView(view.params.country, reportsByCountry(view.params.country)); break;
     case 'year':    renderYearView(view.params.year);          break;
-    case 'historyAll': renderHistoryAllView();                 break;
+    case 'historyAll': renderHistoryAllView(view.params);      break;
     case 'kaimuYears': renderKaimuYearGroupView(view.params);  return; // async
     case 'page':    renderPageView(view.params);              return; // async
     case 'report':  renderReport(view.params);                return; // async
