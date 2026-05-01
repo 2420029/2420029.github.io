@@ -285,7 +285,7 @@
     border-radius: 8px; overflow: hidden;
   }
   .shop-hd {
-    padding: 8px 12px; cursor: pointer;
+    padding: 8px 12px 8px calc(12px + 1em); cursor: pointer;
     display: flex; align-items: center; gap: 8px; user-select: none;
     min-height: 42px;
     font-weight: 300; line-height: 1.4;
@@ -855,3 +855,6 @@
   }
   .tokyo-subarea-body { display: none; }
   .tokyo-subarea-section.expanded .tokyo-subarea-body { display: block; }
+  .tokyo-subarea-body .loc-hd {
+    padding-left: calc(18px + 1em);
+  }

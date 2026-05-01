@@ -556,7 +556,7 @@ function findReportByHref(href) {
 }
 
 function isStoreReportHref(href) {
-  return /\/reports\//i.test(String(href || ''));
+  return /\/(?:reports|rpt\d+)\//i.test(String(href || ''));
 }
 
 function extractShopNameFromTitle(text) {
