@@ -1097,6 +1097,11 @@ function postProcessReportDoc(doc) {
   }
   if (!baseTextNode) return;
 
+  const baseStrong = doc.createElement('strong');
+  baseStrong.textContent = baseTextNode.nodeValue;
+  baseTextNode.replaceWith(baseStrong);
+  baseTextNode = baseStrong.firstChild;
+
   const anchorsToUnwrap = [];
   const nodeWalker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
   let afterBase = false;
@@ -1153,6 +1158,28 @@ function postProcessReportDoc(doc) {
       }
     });
     node.replaceWith(frag);
+  });
+
+  const supplementNodes = [];
+  const supplementWalker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  let inReportList = false;
+  while (supplementWalker.nextNode()) {
+    const node = supplementWalker.currentNode;
+    const text = node.nodeValue || '';
+    if (text.includes('本店舗は他に')) {
+      inReportList = true;
+      continue;
+    }
+    if (!inReportList) continue;
+    if (text.includes('がレポートしております。')) break;
+    if (node.nodeType === 3 && /氏/.test(text)) supplementNodes.push(node);
+  }
+
+  supplementNodes.forEach(node => {
+    const text = node.nodeValue || '';
+    if (/^[\s　]*・/.test(text)) return;
+    const leading = text.match(/^[\s　]*/)?.[0] || '';
+    node.nodeValue = `${leading}・${text.slice(leading.length)}`;
   });
 }
 
